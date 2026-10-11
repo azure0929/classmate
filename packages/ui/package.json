@@ -1,0 +1,24 @@
+{
+  "name": "@classmate/ui",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    "./button": "./src/button.tsx",
+    "./badge": "./src/badge.tsx",
+    "./auth-dialog": "./src/auth-dialog.tsx",
+    "./logout-confirm-dialog": "./src/logout-confirm-dialog.tsx",
+    "./use-demo-session": "./src/use-demo-session.ts"
+  },
+  "scripts": {
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.12",
+    "typescript": "^5.8.3"
+  }
+}
