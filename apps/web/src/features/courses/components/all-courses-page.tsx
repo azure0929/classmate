@@ -7,7 +7,7 @@ import { AccountMenu } from "@classmate/ui/account-menu";
 import { useLoginRequired } from "@classmate/ui/login-required-provider";
 import { useTranslation } from "@classmate/ui/localization";
 import { useDemoSession } from "@classmate/ui/use-demo-session";
-import { curatedCourses } from "../data/curated-videos";
+import { useCourses } from "../hooks/use-courses";
 import type { Course } from "../types/course";
 import { courseCategories } from "../types/course-category";
 import { CourseCard } from "./course-card";
@@ -70,6 +70,7 @@ export function AllCoursesPage() {
   const { user } = useDemoSession();
   const requestLogin = useLoginRequired();
   const { t } = useTranslation();
+  const { data: courses } = useCourses();
 
   useEffect(() => {
     if (!user) setFavorites([]);
@@ -83,7 +84,7 @@ export function AllCoursesPage() {
 
   const filteredCourses = useMemo(() => {
     const normalizedSearch = submittedSearch.trim().toLocaleLowerCase("ko-KR");
-    return curatedCourses
+    return courses
       .filter((course) => category === "전체" || course.category === category)
       .filter((course) => subcategory === "전체" || course.subcategory === subcategory)
       .filter(
@@ -94,7 +95,7 @@ export function AllCoursesPage() {
             .includes(normalizedSearch),
       )
       .sort((first, second) => compareCourses(sort, first, second));
-  }, [category, sort, submittedSearch, subcategory]);
+  }, [category, courses, sort, submittedSearch, subcategory]);
 
   const pageCount = Math.max(1, Math.ceil(filteredCourses.length / PAGE_SIZE));
   const visibleCourses = filteredCourses.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);

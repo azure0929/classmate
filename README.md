@@ -49,6 +49,8 @@ features/
 
 `features/courses/data/curated-videos.ts`의 공개 YouTube 영상 39개가 `/classes`의 강의 목록입니다. 카드는 등록된 영상 제목과 크리에이터, YouTube 썸네일을 보여주며, 영상별 상세 페이지에서 원본 플레이어와 설명·학습 목차를 확인할 수 있습니다. 목차는 등록된 제목·설명·키워드 기반의 학습 가이드이며 실제 자막 검수나 영상 타임스탬프를 보증하지 않습니다. YouTube가 제공하지 않는 평점·수강생 통계 기반 정렬은 비활성화했습니다. `/courses/{courseId}/watch`는 해당 강의에 연결된 원본 영상을 재생하며, 비로그인 사용자도 볼 수 있고 실시간 채팅·공개 Q&A는 로그인 후 이용할 수 있습니다. 영상은 원본 크리에이터가 제공하며 Classmate의 자체 VOD나 크리에이터의 공식 강좌를 의미하지 않습니다.
 
+강의 카탈로그는 Supabase `public.courses` 테이블에서 읽습니다. 첫 이전 마이그레이션은 [courses 스키마 및 초기 39개 영상 데이터](./supabase/migrations/20261011180000_create_seed_public_courses.sql)에 있으며, Supabase Dashboard의 SQL Editor에서 파일 전체를 실행한 뒤 `apps/web/.env.local`에 프로젝트 URL과 publishable key를 설정해야 합니다. 로컬 환경 변수 예시는 [.env.example](./.env.example)에 있습니다. 테이블은 RLS를 켜고 공개 읽기만 허용하며 쓰기 권한은 `anon`/`authenticated`에 주지 않습니다. 앱은 데이터베이스 오류를 목업 데이터로 대체하지 않고 오류로 표시합니다.
+
 공통 UI는 Mantine 8 기반 테마를 사용합니다. `packages/ui/src/localization.tsx`에 한국어·영어·일본어·베트남어 기본 리소스가 있고, 언어 선택값은 브라우저에 저장됩니다. 원격 locize 번역을 사용하려면 `.env.local`에 `NEXT_PUBLIC_LOCIZE_PROJECT_ID`를 설정하고 선택적으로 `NEXT_PUBLIC_LOCIZE_VERSION`을 지정하세요. 두 값이 없으면 로컬 번역만 사용합니다.
 
 홈의 알림 목록은 읽음 상태를 브라우저 로컬 저장소에 기록하고, 모두 읽은 뒤에는 종 아이콘이 회색으로 표시됩니다. 데모 로그인에서 학습자·강사·관리자 화면 권한을 구분하며, 비로그인 강의 재생과 상호작용은 로그인 창으로 유도합니다. 이 데모 인증은 브라우저 상태일 뿐 실제 계정 인증/인가가 아니므로 배포 전 서버 세션과 API 권한 검증으로 교체해야 합니다.
