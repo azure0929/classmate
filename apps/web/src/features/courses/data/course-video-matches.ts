@@ -62,6 +62,10 @@ export function getLessonVideo(
   lesson: string,
   lessonIndex: number,
 ): CuratedVideo | undefined {
+  if (course.curatedVideoId) {
+    return curatedVideos.find((video) => video.id === course.curatedVideoId);
+  }
+
   const subcategoryCandidates = curatedVideos.filter((video) =>
     video.subcategories.includes(course.subcategory),
   );
@@ -82,6 +86,11 @@ export function getLessonVideo(
 }
 
 export function getCourseVideoSources(course: Course): CuratedVideo[] {
+  if (course.curatedVideoId) {
+    const video = curatedVideos.find((item) => item.id === course.curatedVideoId);
+    return video ? [video] : [];
+  }
+
   const cachedSources = courseSourceCache.get(course.id);
   if (cachedSources) return cachedSources;
 
@@ -108,12 +117,15 @@ export function getVideoCourseLessonMatch(
 
   const candidates = mockCourses.filter(
     (course) =>
+      !course.curatedVideoId &&
       course.category === video.category &&
       video.subcategories.includes(course.subcategory),
   );
   const courseCandidates = candidates.length > 0
     ? candidates
-    : mockCourses.filter((course) => course.category === video.category);
+    : mockCourses.filter(
+        (course) => !course.curatedVideoId && course.category === video.category,
+      );
 
   let bestMatch: VideoCourseLessonMatch | undefined;
   let bestScore = -1;

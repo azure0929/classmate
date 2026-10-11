@@ -33,7 +33,6 @@ packages/
 
 ```text
 app/                         App Router 경로, 레이아웃, Provider
-  resources/                 분야별 공개 영상 라이브러리
 features/
   courses/
     api/                     강의 목 데이터와 데이터 접근 계층
@@ -48,7 +47,7 @@ features/
 
 라우트는 화면 조립을 담당하고, 강의 서버 상태는 feature API와 TanStack Query `useSuspenseQuery`로 관리합니다. 홈 카탈로그는 12개씩 번호 페이지로 탐색하고, 전체 강의 페이지는 검색 제출·카테고리·세부 분야·정렬을 제공합니다. 강의 카탈로그의 과정 정보와 통계는 `features/courses/api/mock-courses.ts`의 포트폴리오용 모의 데이터입니다.
 
-`features/courses/data/curated-videos.ts`에는 국내 크리에이터의 공개 영상 39개를 분야·세부 분야·키워드·영상 ID·출처 채널과 함께 정리했습니다. 강의 상세의 각 커리큘럼 섹션은 `course-video-matches.ts`로 관련도가 높은 영상을 연결하며, `/resources`에서 분야별로 둘러볼 수 있습니다. `/courses/{courseId}/watch`는 선택한 섹션의 공개 YouTube 영상을 재생하고 실시간 채팅·공개 Q&A를 제공합니다. 영상은 원본 크리에이터가 제공하며 Classmate 강의의 전체 VOD나 크리에이터의 공식 강좌를 의미하지 않습니다. 과정 제목·강사 큐레이션 이름·평점/수강 정보는 실제 판매/수강 통계가 아닌 데모 데이터입니다.
+`features/courses/data/curated-videos.ts`의 국내 크리에이터 공개 영상 39개는 무료 강의 항목으로 `/classes` 카탈로그에 포함됩니다. 영상별 상세 페이지는 원본 YouTube 플레이어, 설명, 키워드 기반 목차 및 학습 세션을 제공합니다. 일반 강의에는 `course-video-matches.ts`로 관련 공개 영상을 연결합니다. `/courses/{courseId}/watch`는 연결된 영상을 재생하며, 무료 큐레이션 영상은 비로그인 사용자도 볼 수 있고 실시간 채팅·공개 Q&A는 로그인 후 이용할 수 있습니다. 영상은 원본 크리에이터가 제공하며 Classmate 강의의 전체 VOD나 크리에이터의 공식 강좌를 의미하지 않습니다. 과정 제목·강사 큐레이션 이름·평점/수강 정보는 실제 판매/수강 통계가 아닌 데모 데이터입니다.
 
 공통 UI는 Mantine 8 기반 테마를 사용합니다. `packages/ui/src/localization.tsx`에 한국어·영어·일본어·베트남어 기본 리소스가 있고, 언어 선택값은 브라우저에 저장됩니다. 원격 locize 번역을 사용하려면 `.env.local`에 `NEXT_PUBLIC_LOCIZE_PROJECT_ID`를 설정하고 선택적으로 `NEXT_PUBLIC_LOCIZE_VERSION`을 지정하세요. 두 값이 없으면 로컬 번역만 사용합니다.
 
@@ -57,7 +56,7 @@ features/
 ## 인터랙션과 운영 범위
 
 - 강의 검색, 카테고리 필터, 번호 페이지네이션, 상세 커리큘럼
-- 개발·디자인·데이터·생산성·AI·커리어 분야의 국내 크리에이터 공개 영상과 출처 링크
+- 개발·디자인·데이터·생산성·AI·커리어 분야의 국내 크리에이터 무료 강의 항목과 출처 링크
 - 선택한 커리큘럼 섹션에 연결된 YouTube 영상 임베드 및 원본 출처
 - 로그인 후 Socket.IO 실시간 채팅, 본인 메시지 수정·삭제, 접속자 수 동기화
 - 로그인 후 강의별 공개 Q&A 실시간 공유, 본인 질문 수정·삭제

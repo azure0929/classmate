@@ -54,7 +54,7 @@ export function CourseCard({
               backgroundImage: `url("${course.image}")`,
             }}
           />
-          <span className="course-label">{course.label}</span>
+          <span className="course-label">{course.curatedVideoId ? t("pages.curatedVideoBadgeShort") : course.label}</span>
           <span className="image-open"><ArrowRight size={17} /></span>
         </button>
         <button
@@ -72,7 +72,7 @@ export function CourseCard({
         {sources.slice(0, 2).map((source) => source.creator).join(" · ") || course.teacher}
       </div>
       <div className="course-footer">
-        <strong>{t("lesson.publicVideoLabel")}</strong>
+        <strong>{course.curatedVideoId ? t("pages.curatedVideoBadge") : t("lesson.publicVideoLabel")}</strong>
         <span><Play size={14} /> {t("lesson.sourceCount", { count: sources.length })}</span>
       </div>
     </motion.article>

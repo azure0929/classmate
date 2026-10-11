@@ -134,7 +134,6 @@ export function AllCoursesPage() {
         </a>
         <nav className="all-courses-nav" aria-label={t("pages.mainNavigation")}>
           <a className="nav-link nav-link--active" href="/classes">{t("nav.courses")}</a>
-          <a className="nav-link" href="/resources">{t("nav.videos")}</a>
           <a className="nav-link" href="/#live">{t("nav.live")}</a>
           <a className="nav-link" href="/#teachers">{t("nav.creators")}</a>
         </nav>

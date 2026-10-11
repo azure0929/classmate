@@ -61,7 +61,6 @@ export function CourseDetailPage({
         </Link>
         <nav className="course-detail-nav" aria-label={t("pages.mainNavigation")}>
           <Link className="nav-link nav-link--active" href="/classes">{t("nav.courses")}</Link>
-          <Link className="nav-link" href="/resources">{t("nav.videos")}</Link>
           <Link className="nav-link" href="/#live">{t("nav.live")}</Link>
           <Link className="nav-link" href="/#teachers">{t("nav.creators")}</Link>
         </nav>
@@ -91,7 +90,11 @@ export function CourseDetailPage({
               <span className="course-instructor-avatar">{course.teacher.slice(0, 1)}</span>
               <span><small>{t("lesson.curation")}</small><strong>{course.teacher}</strong></span>
             </div>
-            <CourseAccessLink className="button button--primary course-detail-cta" href={`/courses/${course.id}/watch`}>
+            <CourseAccessLink
+              className="button button--primary course-detail-cta"
+              href={`/courses/${course.id}/watch`}
+              requiresAuth={!course.curatedVideoId}
+            >
               <Play size={16} fill="currentColor" /> {t("pages.openCourse")}
             </CourseAccessLink>
             <p className="course-detail-no-payment">
@@ -99,24 +102,47 @@ export function CourseDetailPage({
             </p>
           </div>
           <div
-            className="course-detail-cover"
-            role="img"
-            aria-label={`${title} ${t("pages.openCourse")}`}
+            className={`course-detail-cover${selectedVideo ? " course-detail-cover--video" : ""}`}
+            role={selectedVideo ? undefined : "img"}
+            aria-label={selectedVideo ? undefined : `${title} ${t("pages.openCourse")}`}
             style={{
               backgroundColor: course.color,
               backgroundImage: `url("${course.image}")`,
             }}
           >
-            <span className="course-detail-cover-label">{course.label}</span>
-            <CourseAccessLink
-              className="course-detail-cover-play"
-              href={`/courses/${course.id}/watch`}
-              ariaLabel={`${title} ${t("pages.videoPlayer")}`}
-            >
-              <Play size={20} fill="currentColor" />
-            </CourseAccessLink>
+            {selectedVideo ? (
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${selectedVideo.videoId}?rel=0`}
+                title={`${selectedVideo.creator} - ${selectedVideo.title}`}
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            ) : (
+              <>
+                <span className="course-detail-cover-label">{course.label}</span>
+                <CourseAccessLink
+                  className="course-detail-cover-play"
+                  href={`/courses/${course.id}/watch`}
+                  requiresAuth={!course.curatedVideoId}
+                  ariaLabel={`${title} ${t("pages.videoPlayer")}`}
+                >
+                  <Play size={20} fill="currentColor" />
+                </CourseAccessLink>
+              </>
+            )}
           </div>
         </section>
+        {selectedVideo && (
+          <p className="course-detail-no-payment course-detail-video-notice">
+            {t("pages.publicVideoNotice")}
+            {" · "}
+            <a href={`https://www.youtube.com/watch?v=${selectedVideo.videoId}`} target="_blank" rel="noreferrer">
+              {t("pages.openSource")}
+            </a>
+          </p>
+        )}
 
         <div className="course-detail-layout">
           <div className="course-detail-main">
@@ -151,10 +177,16 @@ export function CourseDetailPage({
                   <CourseAccessLink
                     className="course-detail-session-link"
                     href={`/courses/${course.id}/watch?video=${encodeURIComponent(selectedVideo.id)}&lesson=${encodeURIComponent(selectedVideoMatch.lesson)}`}
+                    requiresAuth={!course.curatedVideoId}
                   >
                     <Play size={14} fill="currentColor" /> {t("pages.watchThisSession")}
                   </CourseAccessLink>
                 </div>
+              )}
+              {course.curatedVideoId && (
+                <p className="course-detail-outline-notice">
+                  {t("pages.videoOutlineNotice")}
+                </p>
               )}
               <div className="course-curriculum">
                 {plan.chapters.map((chapter, index) => (
@@ -178,12 +210,15 @@ export function CourseDetailPage({
                                 <CourseAccessLink
                                   className="course-lesson-watch"
                                   href={`/courses/${course.id}/watch?video=${encodeURIComponent(source.id)}&lesson=${encodeURIComponent(lesson)}`}
+                                  requiresAuth={!course.curatedVideoId}
                                   ariaLabel={`${t("pages.watchThisSession")}: ${source.title}`}
                                 >
                                   <Play size={13} /> {t("pages.watchThisSession")}
                                 </CourseAccessLink>
                               )}
-                              <small>{8 + ((index * 7 + lessonIndex * 5) % 12)}분</small>
+                              {!course.curatedVideoId && (
+                                <small>{8 + ((index * 7 + lessonIndex * 5) % 12)}분</small>
+                              )}
                             </div>
                           </li>
                         );
@@ -223,7 +258,7 @@ export function CourseDetailPage({
                 <h2>{course.teacher}</h2>
                 <p>{t("pages.curationBio", { subcategory: course.subcategory })}</p>
               </div>
-              <CourseAccessLink href={`/courses/${course.id}/watch`}>{t("pages.openCourse")} <ArrowRight size={15} /></CourseAccessLink>
+              <CourseAccessLink href={`/courses/${course.id}/watch`} requiresAuth={!course.curatedVideoId}>{t("pages.openCourse")} <ArrowRight size={15} /></CourseAccessLink>
             </section>
           </div>
 
@@ -232,7 +267,7 @@ export function CourseDetailPage({
             <span><BookOpen size={16} /> {t("lesson.sourceCount", { count: videoSources.length })}</span>
             <span><Clock3 size={16} /> {t("pages.sectionCurriculum")}</span>
             <span><Users size={16} /> {t("pages.liveChatAndQa")}</span>
-            <CourseAccessLink className="button button--primary" href={`/courses/${course.id}/watch`}>
+            <CourseAccessLink className="button button--primary" href={`/courses/${course.id}/watch`} requiresAuth={!course.curatedVideoId}>
               <Play size={15} fill="currentColor" /> {t("pages.openCourse")}
             </CourseAccessLink>
           </aside>

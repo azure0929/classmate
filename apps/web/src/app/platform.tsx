@@ -196,7 +196,6 @@ export function Platform() {
         </a>
         <nav className={`nav-links${mobileNavOpen ? " nav-links--open" : ""}`} aria-label={t("pages.mainNavigation")}>
           <a className="nav-link nav-link--active" href="#classes" onClick={() => setMobileNavOpen(false)}>{t("nav.courses")}</a>
-          <a className="nav-link" href="/resources" onClick={() => setMobileNavOpen(false)}>{t("nav.videos")}</a>
           <a className="nav-link" href="#live" onClick={() => setMobileNavOpen(false)}>{t("nav.live")}</a>
           <a className="nav-link" href="#teachers" onClick={() => setMobileNavOpen(false)}>{t("nav.creators")}</a>
         </nav>
@@ -300,7 +299,7 @@ export function Platform() {
             </div>
             <div className="hero-social">
               <div className="avatar-stack"><Play size={15} /></div>
-              <span><strong>{t("library.count", { count: curatedVideos.length })}</strong></span>
+              <span><strong>{t("pages.curatedVideoCourseCount", { count: curatedVideos.length })}</strong></span>
             </div>
           </div>
           <div className="hero-art">
@@ -335,8 +334,8 @@ export function Platform() {
               <article key={category}>
                 <span>{video.creator.slice(0, 1)}</span>
                 <div><b>{video.creator}</b><small>{t(`categories.${categoryKeys[category]}`)} · {video.title}</small></div>
-                <a href={video.channelUrl} target="_blank" rel="noreferrer" aria-label={`${video.creator} ${t("pages.visitChannel")}`}>
-                  {t("pages.visitChannel")} <ArrowRight size={13} />
+                <a href={`/courses/video-${video.id}`} aria-label={`${video.creator} ${t("pages.openCreatorCourse")}`}>
+                  {t("pages.openCreatorCourse")} <ArrowRight size={13} />
                 </a>
               </article>
             );

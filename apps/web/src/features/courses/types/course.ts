@@ -13,4 +13,5 @@ export interface Course {
   color: string;
   label: string;
   date: string;
+  curatedVideoId?: string;
 }

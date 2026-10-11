@@ -1,4 +1,5 @@
 import type { Course } from "../types/course";
+import { curatedVideos } from "./curated-videos";
 
 export interface CourseChapter {
   title: string;
@@ -169,6 +170,46 @@ const learningPlans: Record<
 };
 
 export function getCourseLearningPlan(course: Course): CourseLearningPlan {
+  const curatedVideo = course.curatedVideoId
+    ? curatedVideos.find((video) => video.id === course.curatedVideoId)
+    : undefined;
+  if (curatedVideo) {
+    const keywordSplit = Math.ceil(curatedVideo.keywords.length / 2);
+    const primaryTopics = curatedVideo.keywords.slice(0, keywordSplit);
+    const appliedTopics = curatedVideo.keywords.slice(keywordSplit);
+    const topicLessons = (topics: string[]) =>
+      topics.map((topic) => `${topic} 핵심 내용과 사례`);
+
+    return {
+      outcomes: [
+        curatedVideo.summary,
+        ...curatedVideo.keywords.slice(0, 3).map((keyword) => `${keyword} 주제를 이해하고 설명합니다.`),
+      ],
+      requirements: [
+        `${curatedVideo.category} 분야에 관심이 있는 학습자`,
+        "영상의 원본 출처와 학습 목차를 함께 확인해 주세요.",
+      ],
+      project: `${curatedVideo.subcategories.join(" · ")} 주제에서 영상의 핵심 내용을 정리하고 실제 학습이나 작업에 적용합니다.`,
+      chapters: [
+        {
+          title: `${curatedVideo.subcategories[0] ?? curatedVideo.category} 주제와 목표`,
+          lessons: [curatedVideo.title, "영상의 목표와 배경 파악하기"],
+        },
+        {
+          title: `${primaryTopics.join(" · ")} 핵심 개념`,
+          lessons: topicLessons(primaryTopics),
+        },
+        {
+          title: `${curatedVideo.subcategories.join(" · ")} 실무 적용`,
+          lessons: [
+            ...topicLessons(appliedTopics),
+            ...curatedVideo.subcategories.map((subcategory) => `${subcategory} 분야에 연결하기`),
+          ],
+        },
+      ],
+    };
+  }
+
   const plan = learningPlans[course.category];
   return {
     outcomes: plan.outcomes,

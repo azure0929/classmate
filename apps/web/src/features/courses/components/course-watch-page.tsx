@@ -117,10 +117,10 @@ export function CourseWatchPage({
   }, [socket, user]);
 
   useEffect(() => {
-    if (!ready || user || authPrompted.current) return;
+    if (!ready || user || course.curatedVideoId || authPrompted.current) return;
     authPrompted.current = true;
     requestLogin();
-  }, [ready, requestLogin, user]);
+  }, [course.curatedVideoId, ready, requestLogin, user]);
 
   const submitQuestion = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -163,7 +163,7 @@ export function CourseWatchPage({
     );
   }
 
-  if (!user) {
+  if (!user && !course.curatedVideoId) {
     return (
       <main className="course-watch-page">
         <header className="course-watch-header">
@@ -287,7 +287,7 @@ export function CourseWatchPage({
                             >
                               <Play size={13} /> {lessonIndex + 1}. {lesson}
                             </button>
-                            {lessonVideo && (
+                            {lessonVideo && !course.curatedVideoId && (
                               <button
                                 className="vod-lesson-source"
                                 type="button"
@@ -315,6 +315,16 @@ export function CourseWatchPage({
             </div>
             <span className={`vod-connection-dot${connected ? " vod-connection-dot--connected" : ""}`} />
           </div>
+          {!user ? (
+            <section className="vod-guest-interaction">
+              <h3>{t("auth.requiredTitle")}</h3>
+              <p>{t("auth.requiredDescription")}</p>
+              <button type="button" onClick={() => requestLogin()}>
+                {t("actions.login")}
+              </button>
+            </section>
+          ) : (
+            <>
           <div className="vod-interaction-tabs" role="tablist" aria-label={t("pages.communicationType")}>
             <button
               role="tab"
@@ -468,6 +478,8 @@ export function CourseWatchPage({
                 <p className="vod-qa-shared-note"><Check size={13} /> {t("pages.sharedInRoom")}</p>
               )}
             </section>
+          )}
+            </>
           )}
         </aside>
       </div>

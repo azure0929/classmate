@@ -75,7 +75,7 @@ export function CourseCatalog({ onSelect }: CourseCatalogProps) {
       </div>
 
       <div className="filter-row">
-        <div className="category-tabs" role="tablist" aria-label={t("pages.videoLibraryFilter")}>
+        <div className="category-tabs" role="tablist" aria-label={t("pages.courseCategoriesFilter")}>
           {categories.map((item) => (
             <button
               key={item}

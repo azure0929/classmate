@@ -1,4 +1,8 @@
 import type { Course } from "../types/course";
+import {
+  createCuratedVideoCourse,
+  curatedVideos,
+} from "../data/curated-videos";
 
 const courseIdeas = [
   {
@@ -107,4 +111,7 @@ const courses: Course[] = courseIdeas.flatMap((group, groupIndex) =>
   ),
 );
 
-export const mockCourses: Course[] = courses;
+export const mockCourses: Course[] = [
+  ...courses,
+  ...curatedVideos.map(createCuratedVideoCourse),
+];

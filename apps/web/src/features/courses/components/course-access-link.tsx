@@ -10,6 +10,7 @@ interface CourseAccessLinkProps {
   href: string;
   className?: string;
   ariaLabel?: string;
+  requiresAuth?: boolean;
   children: ReactNode;
 }
 
@@ -17,6 +18,7 @@ export function CourseAccessLink({
   href,
   className,
   ariaLabel,
+  requiresAuth = true,
   children,
 }: CourseAccessLinkProps) {
   const router = useRouter();
@@ -25,24 +27,24 @@ export function CourseAccessLink({
 
   const openCourse = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    if (!ready) return;
-    if (!user) {
-      requestLogin(() => router.push(href));
-      return;
+    if (requiresAuth) {
+      if (!ready) return;
+      if (!user) {
+        requestLogin(() => router.push(href));
+        return;
+      }
     }
     router.push(href);
   };
 
   return (
-    <>
-      <Link
-        className={className}
-        href={href}
-        aria-label={ariaLabel}
-        onClick={openCourse}
-      >
-        {children}
-      </Link>
-    </>
+    <Link
+      className={className}
+      href={href}
+      aria-label={ariaLabel}
+      onClick={openCourse}
+    >
+      {children}
+    </Link>
   );
 }

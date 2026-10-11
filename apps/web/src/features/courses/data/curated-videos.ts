@@ -1,3 +1,5 @@
+import type { Course } from "../types/course";
+
 export type LearningCategory =
   | "개발"
   | "디자인"
@@ -14,8 +16,31 @@ export interface CuratedVideo {
   videoId: string;
   channelUrl: string;
   summary: string;
-  subcategories: string[];
+  subcategories: Course["subcategory"][];
   keywords: string[];
+}
+
+export function createCuratedVideoCourse(video: CuratedVideo): Course {
+  const subcategory = video.subcategories[0];
+  if (!subcategory) {
+    throw new Error(`Curated video ${video.id} must have a subcategory`);
+  }
+
+  return {
+    id: `video-${video.id}`,
+    curatedVideoId: video.id,
+    title: video.title,
+    teacher: video.creator,
+    category: video.category,
+    subcategory,
+    price: 0,
+    students: "0",
+    rating: "0.00",
+    image: `https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg`,
+    color: "#e7ede5",
+    label: "FREE",
+    date: "",
+  };
 }
 
 export const learningCategories: LearningCategory[] = [

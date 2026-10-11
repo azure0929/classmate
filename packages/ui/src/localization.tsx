@@ -24,7 +24,7 @@ function isSupportedLocale(locale: string): locale is SupportedLocale {
 const resources = {
   ko: {
     common: {
-      nav: { courses: "강의", videos: "무료 영상", live: "라이브", creators: "크리에이터" },
+      nav: { courses: "강의", live: "라이브", creators: "크리에이터" },
       actions: { browse: "강의 둘러보기", login: "로그인", signup: "회원가입", close: "닫기", cancel: "취소" },
       auth: {
         requiredTitle: "로그인이 필요합니다",
@@ -129,6 +129,11 @@ const resources = {
         homeBack: "홈으로 돌아가기",
         findNext: "FIND YOUR NEXT THING",
         courseCount: "{{count}}개의 강의",
+        curatedVideoCourseCount: "{{count}}개의 크리에이터 영상 강의",
+        curatedVideoBadge: "무료 공개 영상",
+        curatedVideoBadgeShort: "무료",
+        videoOutlineNotice: "영상 제목·설명·키워드를 바탕으로 정리한 학습 목차입니다. 원본에 타임스탬프가 제공되지 않아 구간 이동은 지원하지 않습니다.",
+        courseCategoriesFilter: "강의 분야",
         subcategory: "세부 분야",
         sortAria: "강의 정렬",
         sortRecommended: "추천 순",
@@ -201,8 +206,8 @@ const resources = {
         learnTogetherStamp: "함께 배워요",
         creatorEyebrow: "MEET YOUR CREATORS",
         creatorTitle: "한국 크리에이터와 함께 배워요",
-        creatorDescription: "분야별로 엄선한 공개 영상과 원본 채널을 만나보세요.",
-        visitChannel: "채널 방문",
+        creatorDescription: "크리에이터별 무료 강의와 영상 목차를 강의 상세에서 살펴보세요.",
+        openCreatorCourse: "강의 보기",
         liveSeatEyebrow: "YOUR SEAT IS WAITING",
         liveBannerTitle: "오늘, 함께 배워볼까요?",
         liveBannerDescription: "실시간 강의실 미리보기에 참여하고 채팅과 영상 기능을 확인해 보세요.",
@@ -215,7 +220,7 @@ const resources = {
   },
   en: {
     common: {
-      nav: { courses: "Courses", videos: "Free videos", live: "Live", creators: "Creators" },
+      nav: { courses: "Courses", live: "Live", creators: "Creators" },
       actions: { browse: "Browse courses", login: "Log in", signup: "Sign up", close: "Close", cancel: "Cancel" },
       auth: {
         requiredTitle: "Sign in required",
@@ -320,6 +325,11 @@ const resources = {
         homeBack: "Back to home",
         findNext: "FIND YOUR NEXT THING",
         courseCount: "{{count}} courses",
+        curatedVideoCourseCount: "{{count}} creator video courses",
+        curatedVideoBadge: "Free public video",
+        curatedVideoBadgeShort: "FREE",
+        videoOutlineNotice: "This learning outline is based on the video's title, description, and keywords. Seeking to specific timestamps is unavailable because source timestamps are not provided.",
+        courseCategoriesFilter: "Course categories",
         subcategory: "Subcategory",
         sortAria: "Sort courses",
         sortRecommended: "Recommended",
@@ -392,8 +402,8 @@ const resources = {
         learnTogetherStamp: "LEARN TOGETHER",
         creatorEyebrow: "MEET YOUR CREATORS",
         creatorTitle: "Learn with Korean creators",
-        creatorDescription: "Explore curated public videos and visit their original channels.",
-        visitChannel: "Visit channel",
+        creatorDescription: "Explore free creator courses and video outlines in course details.",
+        openCreatorCourse: "View course",
         liveSeatEyebrow: "YOUR SEAT IS WAITING",
         liveBannerTitle: "Shall we learn together today?",
         liveBannerDescription: "Preview the live classroom and explore its chat and video features.",
@@ -406,7 +416,7 @@ const resources = {
   },
   ja: {
     common: {
-      nav: { courses: "講座", videos: "無料動画", live: "ライブ", creators: "クリエイター" },
+      nav: { courses: "講座", live: "ライブ", creators: "クリエイター" },
       actions: { browse: "講座を見る", login: "ログイン", signup: "新規登録", close: "閉じる", cancel: "キャンセル" },
       auth: {
         requiredTitle: "ログインが必要です",
@@ -511,6 +521,11 @@ const resources = {
         homeBack: "ホームに戻る",
         findNext: "FIND YOUR NEXT THING",
         courseCount: "{{count}}件の講座",
+        curatedVideoCourseCount: "クリエイター動画 {{count}} 件",
+        curatedVideoBadge: "無料公開動画",
+        curatedVideoBadgeShort: "無料",
+        videoOutlineNotice: "動画のタイトル・説明・キーワードをもとに整理した学習目次です。元動画にタイムスタンプがないため、再生位置の指定はできません。",
+        courseCategoriesFilter: "講座カテゴリー",
         subcategory: "サブカテゴリー",
         sortAria: "講座の並び替え",
         sortRecommended: "おすすめ順",
@@ -583,8 +598,8 @@ const resources = {
         learnTogetherStamp: "一緒に学ぼう",
         creatorEyebrow: "MEET YOUR CREATORS",
         creatorTitle: "韓国のクリエイターと学ぶ",
-        creatorDescription: "厳選された公開動画を見て、元のチャンネルを訪問できます。",
-        visitChannel: "チャンネルを見る",
+        creatorDescription: "クリエイター別の無料講座と動画目次を講座詳細で確認できます。",
+        openCreatorCourse: "講座を見る",
         liveSeatEyebrow: "YOUR SEAT IS WAITING",
         liveBannerTitle: "今日は一緒に学びませんか？",
         liveBannerDescription: "ライブ教室のプレビューでチャットと動画機能をお試しください。",
@@ -597,7 +612,7 @@ const resources = {
   },
   vi: {
     common: {
-      nav: { courses: "Khóa học", videos: "Video miễn phí", live: "Trực tiếp", creators: "Nhà sáng tạo" },
+      nav: { courses: "Khóa học", live: "Trực tiếp", creators: "Nhà sáng tạo" },
       actions: { browse: "Khám phá khóa học", login: "Đăng nhập", signup: "Đăng ký", close: "Đóng", cancel: "Hủy" },
       auth: {
         requiredTitle: "Vui lòng đăng nhập",
@@ -702,6 +717,11 @@ const resources = {
         homeBack: "Quay lại trang chủ",
         findNext: "FIND YOUR NEXT THING",
         courseCount: "{{count}} khóa học",
+        curatedVideoCourseCount: "{{count}} khóa học video từ nhà sáng tạo",
+        curatedVideoBadge: "Video công khai miễn phí",
+        curatedVideoBadgeShort: "Miễn phí",
+        videoOutlineNotice: "Mục lục học tập được biên soạn dựa trên tiêu đề, mô tả và từ khóa video. Không thể tua đến từng mốc vì video gốc không cung cấp dấu thời gian.",
+        courseCategoriesFilter: "Danh mục khóa học",
         subcategory: "Danh mục phụ",
         sortAria: "Sắp xếp khóa học",
         sortRecommended: "Đề xuất",
@@ -774,8 +794,8 @@ const resources = {
         learnTogetherStamp: "CÙNG NHAU HỌC",
         creatorEyebrow: "MEET YOUR CREATORS",
         creatorTitle: "Học cùng nhà sáng tạo Hàn Quốc",
-        creatorDescription: "Khám phá video công khai được tuyển chọn và kênh gốc.",
-        visitChannel: "Truy cập kênh",
+        creatorDescription: "Xem khóa học miễn phí và mục lục video của từng nhà sáng tạo.",
+        openCreatorCourse: "Xem khóa học",
         liveSeatEyebrow: "YOUR SEAT IS WAITING",
         liveBannerTitle: "Hôm nay cùng học nhé?",
         liveBannerDescription: "Trải nghiệm phòng học trực tiếp và khám phá trò chuyện, video.",
