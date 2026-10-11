@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import type { Course } from "../types/course";
 import { getCourseLearningPlan } from "../data/course-curriculum";
+import { AccountMenu } from "@classmate/ui/account-menu";
+import { CourseAccessLink } from "./course-access-link";
 
 interface CourseDetailPageProps {
   course: Course;
@@ -33,10 +35,12 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
         </Link>
         <nav className="course-detail-nav" aria-label="메인 메뉴">
           <Link className="nav-link nav-link--active" href="/classes">강의</Link>
+          <Link className="nav-link" href="/resources">무료 영상</Link>
           <Link className="nav-link" href="/#live">라이브</Link>
           <Link className="nav-link" href="/#teachers">크리에이터</Link>
         </nav>
         <Link className="course-detail-home" href="/classes">전체 강의 보기</Link>
+        <AccountMenu />
       </header>
 
       <div className="course-detail-content">
@@ -63,9 +67,9 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
               <span className="course-instructor-avatar">{course.teacher.slice(0, 1)}</span>
               <span><small>지식공유자</small><strong>{course.teacher}</strong></span>
             </div>
-            <Link className="button button--primary course-detail-cta" href={`/courses/${course.id}/watch`}>
+            <CourseAccessLink className="button button--primary course-detail-cta" href={`/courses/${course.id}/watch`}>
               <Play size={16} fill="currentColor" /> 보러가기
-            </Link>
+            </CourseAccessLink>
             <p className="course-detail-no-payment">결제 없이 데모 VOD와 학습 기능을 바로 둘러볼 수 있어요.</p>
           </div>
           <div
@@ -78,13 +82,13 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
             }}
           >
             <span className="course-detail-cover-label">{course.label}</span>
-            <Link
+            <CourseAccessLink
               className="course-detail-cover-play"
               href={`/courses/${course.id}/watch`}
-              aria-label={`${title} VOD 보러가기`}
+              ariaLabel={`${title} VOD 보러가기`}
             >
               <Play size={20} fill="currentColor" />
-            </Link>
+            </CourseAccessLink>
           </div>
         </section>
 
@@ -158,7 +162,7 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
                 <h2>{course.teacher}</h2>
                 <p>{course.subcategory} 분야의 실무 경험을 학습자가 따라 하기 쉬운 과정으로 나눕니다.</p>
               </div>
-              <Link href={`/courses/${course.id}/watch`}>강의 보러가기 <ArrowRight size={15} /></Link>
+              <CourseAccessLink href={`/courses/${course.id}/watch`}>강의 보러가기 <ArrowRight size={15} /></CourseAccessLink>
             </section>
           </div>
 
@@ -167,9 +171,9 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
             <span><BookOpen size={16} /> VOD 강의로 원하는 때에</span>
             <span><Clock3 size={16} /> 섹션별 커리큘럼 제공</span>
             <span><Users size={16} /> 실시간 소통과 공개 Q&A</span>
-            <Link className="button button--primary" href={`/courses/${course.id}/watch`}>
+            <CourseAccessLink className="button button--primary" href={`/courses/${course.id}/watch`}>
               <Play size={15} fill="currentColor" /> 보러가기
-            </Link>
+            </CourseAccessLink>
           </aside>
         </div>
       </div>

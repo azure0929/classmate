@@ -3,10 +3,16 @@
 import { useState, type FormEvent } from "react";
 
 export type AuthMode = "login" | "signup";
+export type AuthRole = "learner" | "instructor" | "admin";
 
 export interface AuthUser {
   name: string;
   email: string;
+  role: AuthRole;
+}
+
+function isAuthRole(value: string): value is AuthRole {
+  return value === "learner" || value === "instructor" || value === "admin";
 }
 
 interface AuthDialogProps {
@@ -24,6 +30,7 @@ export function AuthDialog({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<AuthRole>("learner");
   const [error, setError] = useState("");
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
@@ -39,6 +46,7 @@ export function AuthDialog({
     onAuthenticated({
       name: name.trim() || email.trim().split("@")[0] || "학습자",
       email: email.trim(),
+      role,
     });
   };
 
@@ -63,10 +71,23 @@ export function AuthDialog({
           )}
           <label>이메일<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
           <label>비밀번호<input type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} required minLength={1} /></label>
+          <label>
+            데모 역할
+            <select
+              value={role}
+              onChange={(event) => {
+                if (isAuthRole(event.target.value)) setRole(event.target.value);
+              }}
+            >
+              <option value="learner">학습자</option>
+              <option value="instructor">강사</option>
+              <option value="admin">관리자</option>
+            </select>
+          </label>
           {error && <p className="auth-error" role="alert">{error}</p>}
           <button className="auth-submit" type="submit">{mode === "login" ? "로그인" : "회원가입"}</button>
         </form>
-        <p className="auth-demo-note">데모 인증입니다. 비밀번호는 저장하거나 전송하지 않습니다.</p>
+        <p className="auth-demo-note">데모 인증입니다. 역할은 화면 권한 확인용이며 비밀번호는 저장하거나 전송하지 않습니다.</p>
         <button
           className="auth-switch"
           type="button"

@@ -10,7 +10,6 @@ import {
   ChevronRight,
   Clock3,
   LayoutGrid,
-  LogOut,
   Menu,
   MessageCircle,
   Play,
@@ -21,9 +20,8 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AuthDialog, type AuthMode, type AuthUser } from "@classmate/ui/auth-dialog";
+import { AccountMenu } from "@classmate/ui/account-menu";
 import { Button } from "@classmate/ui/button";
-import { LogoutConfirmDialog } from "@classmate/ui/logout-confirm-dialog";
 import { useDemoSession } from "@classmate/ui/use-demo-session";
 import type { Course } from "../features/courses/types/course";
 import { CourseCatalog } from "../features/courses/components/course-catalog";
@@ -72,25 +70,15 @@ export function Platform() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [classroom, setClassroom] = useState(false);
-  const [toast, setToast] = useState("");
-  const [profileOpen, setProfileOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
-  const [authMode, setAuthMode] = useState<AuthMode>("login");
-  const [confirmLogout, setConfirmLogout] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notifications, setNotifications] = useState(initialNotifications);
   const [notificationsReady, setNotificationsReady] = useState(false);
-  const { user, login, logout } = useDemoSession({ name: "지민", email: "jimin@classmate.kr" });
+  const { user } = useDemoSession();
   const unreadNotifications = useMemo(
     () => notifications.filter((notification) => !notification.read).length,
     [notifications],
   );
-
-  const announce = (message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(""), 2200);
-  };
 
   useEffect(() => {
     try {
@@ -175,6 +163,13 @@ export function Platform() {
   };
 
   const openCourse = (course: Course) => router.push(`/courses/${course.id}`);
+  const openClassroom = () => {
+    if (!user) {
+      window.alert("로그인을 해주세요.");
+      return;
+    }
+    setClassroom(true);
+  };
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
@@ -187,12 +182,6 @@ export function Platform() {
     return () => window.removeEventListener("keydown", handleShortcut);
   }, []);
 
-  const handleAuth = (nextUser: AuthUser) => {
-    login(nextUser);
-    setShowAuth(false);
-    announce(`환영합니다, ${nextUser.name}님`);
-  };
-
   return (
     <main id="top">
       <header className="topbar">
@@ -202,6 +191,7 @@ export function Platform() {
         </a>
         <nav className={`nav-links${mobileNavOpen ? " nav-links--open" : ""}`} aria-label="메인 메뉴">
           <a className="nav-link nav-link--active" href="#classes" onClick={() => setMobileNavOpen(false)}>강의</a>
+          <a className="nav-link" href="/resources" onClick={() => setMobileNavOpen(false)}>무료 영상</a>
           <a className="nav-link" href="#live" onClick={() => setMobileNavOpen(false)}>라이브</a>
           <a className="nav-link" href="#teachers" onClick={() => setMobileNavOpen(false)}>크리에이터</a>
         </nav>
@@ -280,10 +270,7 @@ export function Platform() {
               </div>
             </section>
           )}
-          <div className="profile-control">
-            <button className="avatar" aria-label="내 프로필 메뉴" aria-expanded={profileOpen} onClick={() => setProfileOpen((open) => !open)}>{user?.name.slice(0, 1) ?? "?"}</button>
-            {profileOpen && <div className="profile-dropdown">{user ? <><strong>{user.name}</strong><small>{user.email}</small><button onClick={() => setConfirmLogout(true)}>로그아웃 <LogOut size={13} /></button></> : <><strong>기본 프로필</strong><button onClick={() => { setProfileOpen(false); setAuthMode("login"); setShowAuth(true); }}>로그인</button><button onClick={() => { setProfileOpen(false); setAuthMode("signup"); setShowAuth(true); }}>회원가입</button></>}</div>}
-          </div>
+          <AccountMenu />
         </div>
       </header>
 
@@ -300,7 +287,7 @@ export function Platform() {
             <p>실무에 바로 쓰는 기술을 배우고, 같은 목표를 가진 사람들과<br className="desktop-break" /> 함께 성장하는 라이브 강의</p>
             <div className="hero-buttons">
               <a className="button button--cream" href="#classes">강의 둘러보기 <ArrowRight size={16} /></a>
-              <button className="hero-text-button" onClick={() => setClassroom(true)}>
+              <button className="hero-text-button" onClick={openClassroom}>
                 <span className="play-circle"><Play size={12} fill="currentColor" /></span>
                 라이브 강의 입장
               </button>
@@ -334,7 +321,7 @@ export function Platform() {
       <section className="live-banner">
         <div className="live-banner-icon"><Video size={24} /></div>
         <div><div className="section-kicker">YOUR SEAT IS WAITING</div><h3>오늘 저녁, 같이 배워볼까요?</h3><p>드로잉 클럽 라이브가 잠시 후 시작해요.</p></div>
-        <Button onClick={() => setClassroom(true)}>라이브 입장하기 <ArrowRight size={15} /></Button>
+        <Button onClick={openClassroom}>라이브 입장하기 <ArrowRight size={15} /></Button>
         <span className="live-banner-time"><Clock3 size={14} /> 오후 8:00 시작</span>
       </section>
 
@@ -342,10 +329,7 @@ export function Platform() {
 
       <AnimatePresence>
         {classroom && <Classroom onClose={() => setClassroom(false)} />}
-        {showAuth && <AuthDialog initialMode={authMode} onAuthenticated={handleAuth} onClose={() => setShowAuth(false)} />}
-        {confirmLogout && <LogoutConfirmDialog onCancel={() => setConfirmLogout(false)} onConfirm={() => { logout(); setConfirmLogout(false); setProfileOpen(false); }} />}
       </AnimatePresence>
-      <AnimatePresence>{toast && <motion.div className="toast" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}><Check size={16} /> {toast}</motion.div>}</AnimatePresence>
       <button className="mobile-menu" aria-label="메뉴" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)}><Menu size={20} /></button>
       <span className="sr-only"><BookOpen /><LayoutGrid /><MessageCircle /></span>
     </main>

@@ -79,6 +79,7 @@ io.on("connection", (socket) => {
     const question: CourseQuestion = {
       id: randomUUID(),
       courseId,
+      senderId: socket.id,
       author: author.trim().slice(0, 60) || "학습자",
       text: questionText,
       createdAt: new Date().toISOString(),
@@ -87,6 +88,54 @@ io.on("connection", (socket) => {
     history.push(question);
     courseQuestions.set(courseId, history.slice(-100));
     io.to(roomId).emit("qa:new", question);
+  });
+
+  socket.on("qa:edit", ({ courseId, questionId, text }) => {
+    if (
+      typeof courseId !== "string" ||
+      typeof questionId !== "string" ||
+      typeof text !== "string"
+    ) {
+      return;
+    }
+    const questionText = text.trim();
+    const roomId = courseQaRoom(courseId);
+    const question = courseQuestions
+      .get(courseId)
+      ?.find((item) => item.id === questionId);
+    if (
+      !socket.rooms.has(roomId) ||
+      !question ||
+      question.senderId !== socket.id ||
+      !questionText ||
+      questionText.length > 1000
+    ) {
+      return;
+    }
+
+    question.text = questionText;
+    question.editedAt = new Date().toISOString();
+    io.to(roomId).emit("qa:updated", question);
+  });
+
+  socket.on("qa:delete", ({ courseId, questionId }) => {
+    if (typeof courseId !== "string" || typeof questionId !== "string") return;
+    const roomId = courseQaRoom(courseId);
+    const history = courseQuestions.get(courseId);
+    const questionIndex =
+      history?.findIndex((item) => item.id === questionId) ?? -1;
+    const question = questionIndex >= 0 ? history?.[questionIndex] : undefined;
+    if (
+      !socket.rooms.has(roomId) ||
+      !history ||
+      !question ||
+      question.senderId !== socket.id
+    ) {
+      return;
+    }
+
+    history.splice(questionIndex, 1);
+    io.to(roomId).emit("qa:deleted", { courseId, questionId });
   });
 
   socket.on("chat:send", ({ roomId, author, text }) => {

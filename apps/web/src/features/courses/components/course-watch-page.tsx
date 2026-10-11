@@ -7,13 +7,18 @@ import {
   ChevronDown,
   MessageCircle,
   Pause,
+  Pencil,
   Play,
   Send,
   Signal,
+  Trash2,
   Volume2,
+  X,
 } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { io } from "socket.io-client";
+import { AccountMenu } from "@classmate/ui/account-menu";
+import { AuthDialog } from "@classmate/ui/auth-dialog";
 import type { Course } from "../types/course";
 import { getCourseLearningPlan } from "../data/course-curriculum";
 import { useCourseQa } from "../hooks/use-course-qa";
@@ -48,8 +53,12 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
   const [selectedLesson, setSelectedLesson] = useState("강의 소개와 완성할 결과물");
   const [questionText, setQuestionText] = useState("");
   const [questionNotice, setQuestionNotice] = useState("");
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+  const [editingQuestionText, setEditingQuestionText] = useState("");
+  const [showAuth, setShowAuth] = useState(false);
+  const authPrompted = useRef(false);
   const videoRef = useRef<HTMLDivElement>(null);
-  const { user } = useDemoSession();
+  const { user, ready, login } = useDemoSession();
   const roomId = `vod-${course.id}`;
   const author = user?.name ?? "지민";
   const {
@@ -60,11 +69,15 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
     editMessage,
     deleteMessage,
   } = useLiveChat(socket, roomId, author);
-  const { questions, askQuestion } = useCourseQa(socket, course.id);
+  const { questions, askQuestion, editQuestion, deleteQuestion } = useCourseQa(
+    socket,
+    course.id,
+  );
   const plan = getCourseLearningPlan(course);
   const title = course.title.replace(/\n/g, " ");
 
   useEffect(() => {
+    if (!user) return;
     const nextSocket: RealtimeSocket = io(signalingUrl, {
       autoConnect: false,
       transports: ["websocket", "polling"],
@@ -73,15 +86,22 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
     return () => {
       nextSocket.disconnect();
     };
-  }, []);
+  }, [user]);
 
   useEffect(() => {
-    if (!socket) return;
+    if (!user || !socket) return;
     socket.connect();
     return () => {
       socket.disconnect();
     };
-  }, [socket]);
+  }, [socket, user]);
+
+  useEffect(() => {
+    if (!ready || user || authPrompted.current) return;
+    authPrompted.current = true;
+    window.alert("로그인을 해주세요.");
+    setShowAuth(true);
+  }, [ready, user]);
 
   useEffect(() => {
     if (!playing) return;
@@ -116,6 +136,64 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
     videoRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
+  const saveQuestionEdit = (
+    event: FormEvent<HTMLFormElement>,
+    questionId: string,
+  ) => {
+    event.preventDefault();
+    if (!editQuestion(questionId, editingQuestionText)) return;
+    setEditingQuestionId(null);
+    setEditingQuestionText("");
+  };
+
+  const removeQuestion = (questionId: string) => {
+    if (!window.confirm("질문을 삭제할까요?")) return;
+    deleteQuestion(questionId);
+  };
+
+  if (!ready) {
+    return (
+      <main className="course-watch-page">
+        <p className="course-access-message" role="status">로그인 상태를 확인하고 있어요.</p>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return (
+      <main className="course-watch-page">
+        <header className="course-watch-header">
+          <Link className="brand" href="/" aria-label="Classmate 홈">
+            <span className="brand-mark">✳</span>
+            classmate<span className="brand-period">.</span>
+          </Link>
+          <div className="course-watch-header-title">
+            <Link href={`/courses/${course.id}`}><ArrowLeft size={16} /> 강의 상세</Link>
+            <span>{title}</span>
+          </div>
+          <AccountMenu />
+        </header>
+        <section className="course-access-message">
+          <h1>로그인이 필요한 학습 공간이에요</h1>
+          <p>강의 재생, 실시간 채팅, 공개 Q&A는 로그인 후 이용할 수 있습니다.</p>
+          <Link className="button button--secondary" href={`/courses/${course.id}`}>
+            강의 상세로 돌아가기
+          </Link>
+        </section>
+        {showAuth && (
+          <AuthDialog
+            initialMode="login"
+            onAuthenticated={(nextUser) => {
+              login(nextUser);
+              setShowAuth(false);
+            }}
+            onClose={() => setShowAuth(false)}
+          />
+        )}
+      </main>
+    );
+  }
+
   return (
     <main className="course-watch-page">
       <header className="course-watch-header">
@@ -128,6 +206,7 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
           <span>{title}</span>
         </div>
         <span className="course-watch-demo-label">데모 VOD</span>
+        <AccountMenu />
       </header>
 
       <div className="course-watch-layout">
@@ -331,8 +410,56 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
                             minute: "2-digit",
                           })}
                         </time>
+                        {question.senderId === socket?.id && (
+                          <div className="vod-question-actions">
+                            <button
+                              type="button"
+                              aria-label="질문 수정"
+                              onClick={() => {
+                                setEditingQuestionId(question.id);
+                                setEditingQuestionText(question.text);
+                              }}
+                            >
+                              <Pencil size={14} /> 수정
+                            </button>
+                            <button
+                              type="button"
+                              aria-label="질문 삭제"
+                              onClick={() => removeQuestion(question.id)}
+                            >
+                              <Trash2 size={14} /> 삭제
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      <p>{question.text}</p>
+                      {editingQuestionId === question.id ? (
+                        <form
+                          className="vod-question-edit-form"
+                          onSubmit={(event) => saveQuestionEdit(event, question.id)}
+                        >
+                          <textarea
+                            aria-label="질문 내용 수정"
+                            value={editingQuestionText}
+                            onChange={(event) =>
+                              setEditingQuestionText(event.target.value)
+                            }
+                            maxLength={1000}
+                            required
+                          />
+                          <div>
+                            <small>{editingQuestionText.length}/1000</small>
+                            <button type="button" onClick={() => setEditingQuestionId(null)}>
+                              <X size={14} /> 취소
+                            </button>
+                            <button type="submit" disabled={!editingQuestionText.trim()}>
+                              <Check size={14} /> 저장
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <p>{question.text}</p>
+                      )}
+                      {question.editedAt && <small className="vod-question-edited">수정됨</small>}
                     </article>
                   ))
                 )}

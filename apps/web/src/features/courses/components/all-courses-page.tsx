@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Search, Sparkles, X } from "lucide-react";
+import { AccountMenu } from "@classmate/ui/account-menu";
+import { AuthDialog, type AuthUser } from "@classmate/ui/auth-dialog";
+import { useDemoSession } from "@classmate/ui/use-demo-session";
 import { mockCourses } from "../api/mock-courses";
 import type { Course } from "../types/course";
 import { courseCategories } from "../types/course-category";
@@ -47,6 +50,13 @@ export function AllCoursesPage() {
   const [sort, setSort] = useState<SortOption>("추천 순");
   const [page, setPage] = useState(1);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [showAuth, setShowAuth] = useState(false);
+  const [pendingFavorite, setPendingFavorite] = useState<string | null>(null);
+  const { user, login } = useDemoSession();
+
+  useEffect(() => {
+    if (!user) setFavorites([]);
+  }, [user]);
 
   useEffect(() => {
     setSearch(queryParam);
@@ -81,6 +91,12 @@ export function AllCoursesPage() {
   };
 
   const toggleFavorite = (courseId: string) => {
+    if (!user) {
+      window.alert("로그인을 해주세요.");
+      setPendingFavorite(courseId);
+      setShowAuth(true);
+      return;
+    }
     setFavorites((current) =>
       current.includes(courseId)
         ? current.filter((id) => id !== courseId)
@@ -97,6 +113,7 @@ export function AllCoursesPage() {
         </a>
         <nav className="all-courses-nav" aria-label="메인 메뉴">
           <a className="nav-link nav-link--active" href="/classes">강의</a>
+          <a className="nav-link" href="/resources">무료 영상</a>
           <a className="nav-link" href="/#live">라이브</a>
           <a className="nav-link" href="/#teachers">크리에이터</a>
         </nav>
@@ -130,6 +147,7 @@ export function AllCoursesPage() {
             <Search size={16} />
           </button>
         </form>
+        <AccountMenu />
       </header>
 
       <section className="all-courses-content">
@@ -275,6 +293,24 @@ export function AllCoursesPage() {
         <span>© 2026 Classmate Studio</span>
       </footer>
 
+      {showAuth && (
+        <AuthDialog
+          initialMode="login"
+          onAuthenticated={(nextUser: AuthUser) => {
+            login(nextUser);
+            if (pendingFavorite) {
+              setFavorites((current) =>
+                current.includes(pendingFavorite)
+                  ? current.filter((id) => id !== pendingFavorite)
+                  : [...current, pendingFavorite],
+              );
+              setPendingFavorite(null);
+            }
+            setShowAuth(false);
+          }}
+          onClose={() => setShowAuth(false)}
+        />
+      )}
     </main>
   );
 }

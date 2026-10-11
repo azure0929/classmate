@@ -5,6 +5,7 @@
   "exports": {
     "./button": "./src/button.tsx",
     "./badge": "./src/badge.tsx",
+    "./account-menu": "./src/account-menu.tsx",
     "./auth-dialog": "./src/auth-dialog.tsx",
     "./logout-confirm-dialog": "./src/logout-confirm-dialog.tsx",
     "./use-demo-session": "./src/use-demo-session.ts"

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DemoSessionProvider } from "@classmate/ui/use-demo-session";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,7 +12,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <DemoSessionProvider>{children}</DemoSessionProvider>
+      </body>
     </html>
   );
 }

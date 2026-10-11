@@ -96,7 +96,7 @@ export default function AdminPage() {
   const [workspaceName, setWorkspaceName] = useState("Classmate Studio");
   const [adminEmail, setAdminEmail] = useState("jimin@classmate.kr");
   const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
-  const { user, login, logout } = useDemoSession();
+  const { user, ready, login, logout } = useDemoSession();
 
   useEffect(() => {
     const stored = localStorage.getItem("classmate-workspace-settings");
@@ -157,6 +157,7 @@ export default function AdminPage() {
 
   const handleAuth = (nextUser: AuthUser) => {
     login(nextUser);
+    setShowAuth(false);
     notify(`환영합니다, ${nextUser.name}님.`);
   };
 
@@ -324,6 +325,34 @@ export default function AdminPage() {
     help: renderHelp,
   }[activeSection]();
 
+  if (!ready) {
+    return <main className="admin-access-gate" role="status">로그인 상태를 확인하고 있어요.</main>;
+  }
+
+  if (!user || user.role === "learner") {
+    return (
+      <main className="admin-access-gate">
+        <section>
+          <span className="workspace-mark">c.</span>
+          <h1>강사·관리자 전용 워크스페이스</h1>
+          <p>
+            클래스와 크리에이터 관리 기능은 강사 또는 관리자 데모 역할로 로그인해야 이용할 수 있습니다.
+          </p>
+          <button className="auth-submit" type="button" onClick={() => setShowAuth(true)}>
+            로그인
+          </button>
+          {showAuth && (
+            <AuthDialog
+              initialMode="login"
+              onAuthenticated={handleAuth}
+              onClose={() => setShowAuth(false)}
+            />
+          )}
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="admin-shell">
       <aside className="admin-sidebar">
@@ -344,7 +373,7 @@ export default function AdminPage() {
           <button className={`admin-nav-item${activeSection === "help" ? " admin-nav-item--active" : ""}`} onClick={() => selectSection("help")}><CircleHelp size={17} /> 도움말</button>
         </nav>
         <div className="sidebar-bottom">
-          <button className="admin-profile admin-profile-button" onClick={() => setProfileMenuOpen((open) => !open)} aria-expanded={profileMenuOpen}><span className="profile-picture">{user?.name.slice(0, 1) ?? "기"}</span><span><b>{user?.name ?? "기본 프로필"}</b><small>{user ? "슈퍼 관리자" : "로그인하려면 눌러주세요"}</small></span><MoreHorizontal size={17} /></button>
+          <button className="admin-profile admin-profile-button" onClick={() => setProfileMenuOpen((open) => !open)} aria-expanded={profileMenuOpen}><span className="profile-picture">{user.name.slice(0, 1)}</span><span><b>{user.name}</b><small>{user.role === "admin" ? "관리자" : "강사"}</small></span><MoreHorizontal size={17} /></button>
           {profileMenuOpen && <div className="profile-menu">{user ? <><button onClick={() => selectSection("settings")}><Settings2 size={14} /> 계정 설정</button><button onClick={() => setConfirmLogout(true)}><LogOut size={14} /> 로그아웃</button></> : <><div className="signed-out-profile">기본 프로필</div><button onClick={() => { setProfileMenuOpen(false); setShowAuth(true); }}>로그인</button></>}</div>}
           <div className="sidebar-footnote"><span>⌘ K</span> 빠른 검색</div>
         </div>

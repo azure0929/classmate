@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
+import { AuthDialog } from "@classmate/ui/auth-dialog";
+import { useDemoSession } from "@classmate/ui/use-demo-session";
 import type { Course } from "../types/course";
 import { courseCategories } from "../types/course-category";
 import { useCourses } from "../hooks/use-courses";
@@ -18,6 +20,13 @@ export function CourseCatalog({ onSelect }: CourseCatalogProps) {
   const [category, setCategory] = useState("전체");
   const [page, setPage] = useState(1);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [showAuth, setShowAuth] = useState(false);
+  const [pendingFavorite, setPendingFavorite] = useState<string | null>(null);
+  const { user, login } = useDemoSession();
+
+  useEffect(() => {
+    if (!user) setFavorites([]);
+  }, [user]);
   const { data: courses } = useCourses();
 
   const filteredCourses = useMemo(
@@ -27,6 +36,12 @@ export function CourseCatalog({ onSelect }: CourseCatalogProps) {
   const pageCount = Math.max(1, Math.ceil(filteredCourses.length / PAGE_SIZE));
   const visibleCourses = filteredCourses.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const toggleFavorite = (courseId: string) => {
+    if (!user) {
+      window.alert("로그인을 해주세요.");
+      setPendingFavorite(courseId);
+      setShowAuth(true);
+      return;
+    }
     setFavorites((current) =>
       current.includes(courseId)
         ? current.filter((id) => id !== courseId)
@@ -107,6 +122,24 @@ export function CourseCatalog({ onSelect }: CourseCatalogProps) {
             <ArrowRight size={15} />
           </button>
         </nav>
+      )}
+      {showAuth && (
+        <AuthDialog
+          initialMode="login"
+          onAuthenticated={(nextUser) => {
+            login(nextUser);
+            if (pendingFavorite) {
+              setFavorites((current) =>
+                current.includes(pendingFavorite)
+                  ? current.filter((id) => id !== pendingFavorite)
+                  : [...current, pendingFavorite],
+              );
+              setPendingFavorite(null);
+            }
+            setShowAuth(false);
+          }}
+          onClose={() => setShowAuth(false)}
+        />
       )}
     </section>
   );
