@@ -1,8 +1,10 @@
 "use client";
 
-import { ArrowRight, Heart, Users } from "lucide-react";
+import { ArrowRight, Heart, Play } from "lucide-react";
 import { motion } from "framer-motion";
+import { useTranslation } from "@classmate/ui/localization";
 import type { Course } from "../types/course";
+import { getCourseVideoSources } from "../data/course-video-matches";
 
 interface CourseCardProps {
   course: Course;
@@ -20,6 +22,8 @@ export function CourseCard({
   onToggleFavorite,
 }: CourseCardProps) {
   const title = course.title.replace(/\n/g, " ");
+  const { t } = useTranslation();
+  const sources = getCourseVideoSources(course);
 
   return (
     <motion.article
@@ -53,10 +57,15 @@ export function CourseCard({
           <Heart size={16} fill={favorite ? "currentColor" : "none"} />
         </button>
       </div>
-      <div className="course-meta"><span>{course.category} · {course.subcategory}</span><span>★ {course.rating}</span></div>
+      <div className="course-meta"><span>{course.category} · {course.subcategory}</span></div>
       <button className="course-title" onClick={() => onSelect(course)}>{course.title}</button>
-      <div className="course-teacher">{course.teacher}</div>
-      <div className="course-footer"><strong>VOD 강의</strong><span><Users size={14} /> {course.students}</span></div>
+      <div className="course-teacher">
+        {sources.slice(0, 2).map((source) => source.creator).join(" · ") || course.teacher}
+      </div>
+      <div className="course-footer">
+        <strong>{t("lesson.publicVideoLabel")}</strong>
+        <span><Play size={14} /> {t("lesson.sourceCount", { count: sources.length })}</span>
+      </div>
     </motion.article>
   );
 }

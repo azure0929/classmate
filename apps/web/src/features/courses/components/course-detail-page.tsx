@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -5,22 +7,26 @@ import {
   BookOpen,
   Check,
   Clock3,
+  ExternalLink,
   Play,
-  Star,
   Users,
 } from "lucide-react";
 import type { Course } from "../types/course";
 import { getCourseLearningPlan } from "../data/course-curriculum";
+import { getCourseVideoSources, getLessonVideo } from "../data/course-video-matches";
 import { AccountMenu } from "@classmate/ui/account-menu";
 import { CourseAccessLink } from "./course-access-link";
+import { useTranslation } from "@classmate/ui/localization";
 
 interface CourseDetailPageProps {
   course: Course;
 }
 
 export function CourseDetailPage({ course }: CourseDetailPageProps) {
+  const { t } = useTranslation();
   const title = course.title.replace(/\n/g, " ");
   const plan = getCourseLearningPlan(course);
+  const videoSources = getCourseVideoSources(course);
   const lessonCount = plan.chapters.reduce(
     (total, chapter) => total + chapter.lessons.length,
     0,
@@ -34,10 +40,10 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
           classmate<span className="brand-period">.</span>
         </Link>
         <nav className="course-detail-nav" aria-label="메인 메뉴">
-          <Link className="nav-link nav-link--active" href="/classes">강의</Link>
-          <Link className="nav-link" href="/resources">무료 영상</Link>
-          <Link className="nav-link" href="/#live">라이브</Link>
-          <Link className="nav-link" href="/#teachers">크리에이터</Link>
+          <Link className="nav-link nav-link--active" href="/classes">{t("nav.courses")}</Link>
+          <Link className="nav-link" href="/resources">{t("nav.videos")}</Link>
+          <Link className="nav-link" href="/#live">{t("nav.live")}</Link>
+          <Link className="nav-link" href="/#teachers">{t("nav.creators")}</Link>
         </nav>
         <Link className="course-detail-home" href="/classes">전체 강의 보기</Link>
         <AccountMenu />
@@ -45,7 +51,7 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
 
       <div className="course-detail-content">
         <Link className="all-courses-back" href="/classes">
-          <ArrowLeft size={15} /> 강의 목록으로
+          <ArrowLeft size={15} /> {t("pages.courseListTitle")}
         </Link>
 
         <section className="course-detail-hero">
@@ -55,22 +61,23 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
             </div>
             <h1>{title}</h1>
             <p className="course-detail-summary">
-              {course.subcategory}의 핵심부터 실무 적용까지, {course.teacher}와 함께
-              단계별로 완성해요.
+            {course.subcategory}의 핵심을 익히고 실무 흐름에 적용하는 Classmate 큐레이션 커리큘럼입니다.
+            각 섹션에는 관련 주제를 다루는 국내 크리에이터의 공개 영상을 연결했어요.
             </p>
             <div className="course-detail-rating">
-              <span><Star size={15} fill="currentColor" /> {course.rating}</span>
-              <span><Users size={15} /> {course.students}명 수강</span>
               <span><BookOpen size={15} /> {plan.chapters.length}개 섹션 · {lessonCount}개 강의</span>
+              <span><ExternalLink size={15} /> {t("lesson.sourceCount", { count: videoSources.length })}</span>
             </div>
             <div className="course-detail-instructor">
               <span className="course-instructor-avatar">{course.teacher.slice(0, 1)}</span>
-              <span><small>지식공유자</small><strong>{course.teacher}</strong></span>
+              <span><small>{t("lesson.curation")}</small><strong>{course.teacher}</strong></span>
             </div>
             <CourseAccessLink className="button button--primary course-detail-cta" href={`/courses/${course.id}/watch`}>
               <Play size={16} fill="currentColor" /> 보러가기
             </CourseAccessLink>
-            <p className="course-detail-no-payment">결제 없이 데모 VOD와 학습 기능을 바로 둘러볼 수 있어요.</p>
+            <p className="course-detail-no-payment">
+              무료 공개 영상을 학습 참고 자료로 제공합니다. 원본 영상의 저작권과 재생은 각 크리에이터에게 있습니다.
+            </p>
           </div>
           <div
             className="course-detail-cover"
@@ -85,7 +92,7 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
             <CourseAccessLink
               className="course-detail-cover-play"
               href={`/courses/${course.id}/watch`}
-              ariaLabel={`${title} VOD 보러가기`}
+              ariaLabel={`${title} ${t("pages.videoPlayer")}`}
             >
               <Play size={20} fill="currentColor" />
             </CourseAccessLink>
@@ -109,7 +116,7 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
             <section className="course-detail-section">
               <div className="course-detail-section-heading">
                 <span>CURRICULUM</span>
-                <h2>커리큘럼</h2>
+                <h2>{t("pages.curriculum")}</h2>
                 <p>{plan.chapters.length}개 섹션 · {lessonCount}개 강의로 차근차근 학습해요.</p>
               </div>
               <div className="course-curriculum">
@@ -121,12 +128,30 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
                       <Clock3 size={15} />
                     </summary>
                     <ol>
-                      {chapter.lessons.map((lesson, lessonIndex) => (
-                        <li key={lesson}>
-                          <span><Play size={12} /> {lessonIndex + 1}. {lesson}</span>
-                          <small>{8 + ((index * 7 + lessonIndex * 5) % 12)}분</small>
-                        </li>
-                      ))}
+                      {chapter.lessons.map((lesson, lessonIndex) => {
+                        const lessonOffset = plan.chapters
+                          .slice(0, index)
+                          .reduce((total, previousChapter) => total + previousChapter.lessons.length, 0);
+                        const source = getLessonVideo(course, lesson, lessonOffset + lessonIndex);
+                        return (
+                          <li key={lesson}>
+                            <span><Play size={12} /> {lessonIndex + 1}. {lesson}</span>
+                            <div className="course-lesson-actions">
+                              {source && (
+                                <a
+                                  href={`https://www.youtube.com/watch?v=${source.videoId}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  aria-label={`${t("lesson.publicResource")}: ${source.title}`}
+                                >
+                                  <ExternalLink size={13} /> {source.creator}
+                                </a>
+                              )}
+                              <small>{8 + ((index * 7 + lessonIndex * 5) % 12)}분</small>
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ol>
                   </details>
                 ))}
@@ -158,17 +183,19 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
                 {course.teacher.slice(0, 1)}
               </span>
               <div>
-                <small>지식공유자</small>
+                <small>{t("lesson.curation")}</small>
                 <h2>{course.teacher}</h2>
-                <p>{course.subcategory} 분야의 실무 경험을 학습자가 따라 하기 쉬운 과정으로 나눕니다.</p>
+                <p>
+                  {course.subcategory} 학습 흐름을 구성하고 국내 크리에이터의 공개 영상을 섹션별 참고 자료로 연결합니다.
+                </p>
               </div>
-              <CourseAccessLink href={`/courses/${course.id}/watch`}>강의 보러가기 <ArrowRight size={15} /></CourseAccessLink>
+              <CourseAccessLink href={`/courses/${course.id}/watch`}>{t("pages.videoPlayer")} <ArrowRight size={15} /></CourseAccessLink>
             </section>
           </div>
 
           <aside className="course-detail-aside">
-            <strong>내 속도에 맞춰 학습해요</strong>
-            <span><BookOpen size={16} /> VOD 강의로 원하는 때에</span>
+            <strong>{t("pages.relatedVideos")}</strong>
+            <span><BookOpen size={16} /> {t("lesson.sourceCount", { count: videoSources.length })}</span>
             <span><Clock3 size={16} /> 섹션별 커리큘럼 제공</span>
             <span><Users size={16} /> 실시간 소통과 공개 Q&A</span>
             <CourseAccessLink className="button button--primary" href={`/courses/${course.id}/watch`}>

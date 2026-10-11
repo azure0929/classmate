@@ -241,6 +241,7 @@
 .vod-curriculum-list li button svg{color:#9ba49c}
 .vod-curriculum-list li button.vod-lesson--active{color:var(--green);font-weight:700}
 .vod-curriculum-list li small{font-size:14px;color:#929990}
+.vod-curriculum-list li .vod-lesson-source{flex:0 0 auto;color:var(--green);font-size:14px;white-space:nowrap}
 .vod-interaction-panel{position:sticky;top:15px;min-height:640px;max-height:calc(100vh - 95px);display:flex;flex-direction:column;background:#fff;border:1px solid #e5e8e2;border-radius:7px;overflow:hidden}
 .vod-interaction-header{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 15px}
 .vod-interaction-header>div>span{font-size:14px;letter-spacing:1.1px;color:#8e978e;font-weight:700}

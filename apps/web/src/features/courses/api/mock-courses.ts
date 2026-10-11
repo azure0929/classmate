@@ -3,7 +3,6 @@ import type { Course } from "../types/course";
 const courseIdeas = [
   {
     category: "개발",
-    teacher: ["김민준 · 소프트웨어 엔지니어", "박지수 · 프론트엔드 개발자", "이도윤 · 테크 리드"],
     image: "photo-1516321318423-f06f85e504b3",
     color: "#b9cde0",
     subcategories: [
@@ -22,7 +21,6 @@ const courseIdeas = [
   },
   {
     category: "디자인",
-    teacher: ["김하나 · 프로덕트 디자이너", "윤서진 · UX 디자이너", "정다은 · 브랜드 디자이너"],
     image: "photo-1561070791-2526d30994b5",
     color: "#edc6b5",
     subcategories: [
@@ -35,7 +33,6 @@ const courseIdeas = [
   },
   {
     category: "데이터 사이언스",
-    teacher: ["이도현 · 데이터 분석가", "박서연 · 데이터 사이언티스트", "최윤 · 머신러닝 엔지니어"],
     image: "photo-1551288049-bebda4e38f71",
     color: "#c5d6c8",
     subcategories: [
@@ -48,7 +45,6 @@ const courseIdeas = [
   },
   {
     category: "업무 생산성",
-    teacher: ["한지우 · 프로덕트 매니저", "장민석 · 업무 자동화 컨설턴트", "조현아 · 테크니컬 라이터"],
     image: "photo-1454165804606-c3d57bc86b40",
     color: "#e4d5a9",
     subcategories: [
@@ -61,7 +57,6 @@ const courseIdeas = [
   },
   {
     category: "AI 기술",
-    teacher: ["오유리 · AI 엔지니어", "김태희 · ML 리서처", "서은우 · AI 프로덕트 개발자"],
     image: "photo-1677442136019-21780ecad995",
     color: "#c8c4e6",
     subcategories: [
@@ -74,7 +69,6 @@ const courseIdeas = [
   },
   {
     category: "커리어",
-    teacher: ["박지수 · 프론트엔드 엔지니어", "문채원 · 엔지니어링 매니저", "한서준 · 테크 리크루터"],
     image: "photo-1521737711867-e3b97375f902",
     color: "#d7c8b8",
     subcategories: [
@@ -98,7 +92,7 @@ const courses: Course[] = courseIdeas.flatMap((group, groupIndex) =>
       return {
         id: `course-${groupIndex + 1}-${subcategoryIndex + 1}-${titleIndex + 1}`,
         title,
-        teacher: group.teacher[(subcategoryIndex + titleIndex) % group.teacher.length],
+        teacher: "Classmate 큐레이션 팀",
         category: group.category,
         subcategory: subcategory.name,
         price: 29000 + ((index * 7 + groupIndex * 5) % 15) * 3000,

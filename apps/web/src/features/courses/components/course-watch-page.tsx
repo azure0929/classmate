@@ -6,21 +6,21 @@ import {
   Check,
   ChevronDown,
   MessageCircle,
-  Pause,
   Pencil,
   Play,
   Send,
   Signal,
   Trash2,
-  Volume2,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { io } from "socket.io-client";
 import { AccountMenu } from "@classmate/ui/account-menu";
-import { AuthDialog } from "@classmate/ui/auth-dialog";
+import { useLoginRequired } from "@classmate/ui/login-required-provider";
+import { useTranslation } from "@classmate/ui/localization";
 import type { Course } from "../types/course";
 import { getCourseLearningPlan } from "../data/course-curriculum";
+import { getLessonVideo } from "../data/course-video-matches";
 import { useCourseQa } from "../hooks/use-course-qa";
 import { useDemoSession } from "@classmate/ui/use-demo-session";
 import {
@@ -38,27 +38,24 @@ type WatchTab = "chat" | "questions";
 
 const signalingUrl =
   process.env.NEXT_PUBLIC_REALTIME_URL ?? "http://localhost:4001";
-const videoDuration = 32 * 60;
-
-function formatTime(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
-  return `${String(minutes).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
-}
 
 export function CourseWatchPage({ course }: CourseWatchPageProps) {
+  const plan = getCourseLearningPlan(course);
+  const title = course.title.replace(/\n/g, " ");
   const [socket, setSocket] = useState<RealtimeSocket | null>(null);
   const [tab, setTab] = useState<WatchTab>("chat");
-  const [playing, setPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [selectedLesson, setSelectedLesson] = useState("강의 소개와 완성할 결과물");
+  const [selectedLesson, setSelectedLesson] = useState(
+    () => plan.chapters[0]?.lessons[0] ?? "강의 소개",
+  );
   const [questionText, setQuestionText] = useState("");
   const [questionNotice, setQuestionNotice] = useState("");
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [editingQuestionText, setEditingQuestionText] = useState("");
-  const [showAuth, setShowAuth] = useState(false);
   const authPrompted = useRef(false);
   const videoRef = useRef<HTMLDivElement>(null);
-  const { user, ready, login } = useDemoSession();
+  const { user, ready } = useDemoSession();
+  const requestLogin = useLoginRequired();
+  const { t } = useTranslation();
   const roomId = `vod-${course.id}`;
   const author = user?.name ?? "지민";
   const {
@@ -73,8 +70,14 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
     socket,
     course.id,
   );
-  const plan = getCourseLearningPlan(course);
-  const title = course.title.replace(/\n/g, " ");
+  const selectedLessonIndex = plan.chapters
+    .flatMap((chapter) => chapter.lessons)
+    .indexOf(selectedLesson);
+  const selectedSource = getLessonVideo(
+    course,
+    selectedLesson,
+    Math.max(0, selectedLessonIndex),
+  );
 
   useEffect(() => {
     if (!user) return;
@@ -99,23 +102,8 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
   useEffect(() => {
     if (!ready || user || authPrompted.current) return;
     authPrompted.current = true;
-    window.alert("로그인을 해주세요.");
-    setShowAuth(true);
-  }, [ready, user]);
-
-  useEffect(() => {
-    if (!playing) return;
-    const interval = window.setInterval(() => {
-      setCurrentTime((time) => {
-        if (time >= videoDuration) {
-          setPlaying(false);
-          return videoDuration;
-        }
-        return time + 1;
-      });
-    }, 1000);
-    return () => window.clearInterval(interval);
-  }, [playing]);
+    requestLogin();
+  }, [ready, requestLogin, user]);
 
   const submitQuestion = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -131,8 +119,6 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
 
   const playLesson = (lesson: string) => {
     setSelectedLesson(lesson);
-    setCurrentTime(0);
-    setPlaying(true);
     videoRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
@@ -154,7 +140,7 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
   if (!ready) {
     return (
       <main className="course-watch-page">
-        <p className="course-access-message" role="status">로그인 상태를 확인하고 있어요.</p>
+        <p className="course-access-message" role="status">{t("account.checking")}</p>
       </main>
     );
   }
@@ -168,28 +154,18 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
             classmate<span className="brand-period">.</span>
           </Link>
           <div className="course-watch-header-title">
-            <Link href={`/courses/${course.id}`}><ArrowLeft size={16} /> 강의 상세</Link>
+            <Link href={`/courses/${course.id}`}><ArrowLeft size={16} /> {t("pages.courseDetail")}</Link>
             <span>{title}</span>
           </div>
           <AccountMenu />
         </header>
         <section className="course-access-message">
-          <h1>로그인이 필요한 학습 공간이에요</h1>
-          <p>강의 재생, 실시간 채팅, 공개 Q&A는 로그인 후 이용할 수 있습니다.</p>
+          <h1>{t("pages.loginGateTitle")}</h1>
+          <p>{t("pages.loginGateDescription")}</p>
           <Link className="button button--secondary" href={`/courses/${course.id}`}>
-            강의 상세로 돌아가기
+            {t("pages.backToCourse")}
           </Link>
         </section>
-        {showAuth && (
-          <AuthDialog
-            initialMode="login"
-            onAuthenticated={(nextUser) => {
-              login(nextUser);
-              setShowAuth(false);
-            }}
-            onClose={() => setShowAuth(false)}
-          />
-        )}
       </main>
     );
   }
@@ -202,61 +178,45 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
           classmate<span className="brand-period">.</span>
         </Link>
         <div className="course-watch-header-title">
-          <Link href={`/courses/${course.id}`}><ArrowLeft size={16} /> 강의 상세</Link>
+          <Link href={`/courses/${course.id}`}><ArrowLeft size={16} /> {t("pages.courseDetail")}</Link>
           <span>{title}</span>
         </div>
-        <span className="course-watch-demo-label">데모 VOD</span>
+        <span className="course-watch-demo-label">{t("pages.publicVideoLabel")}</span>
         <AccountMenu />
       </header>
 
       <div className="course-watch-layout">
         <div className="course-watch-main">
-          <section className="vod-player-section" ref={videoRef} aria-label="VOD 플레이어">
-            <div
-              className="vod-player-screen"
-              style={{
-                backgroundColor: course.color,
-                backgroundImage: `linear-gradient(0deg, #101913a8, #10191320), url("${course.image}")`,
-              }}
-            >
-              <span className="vod-screen-category">{course.category} · {course.subcategory}</span>
-              <div className="vod-screen-message">
-                <span className="vod-screen-play"><Play size={24} fill="currentColor" /></span>
-                <strong>{selectedLesson}</strong>
-                <small>데모 환경의 VOD 플레이어입니다.</small>
-              </div>
-              <span className="vod-screen-corner">CLASSMATE · VOD</span>
-            </div>
-            <div className="vod-controls">
-              <input
-                className="vod-progress"
-                type="range"
-                aria-label="재생 위치"
-                min={0}
-                max={videoDuration}
-                value={currentTime}
-                style={{ "--progress": `${(currentTime / videoDuration) * 100}%` } as React.CSSProperties}
-                onChange={(event) => setCurrentTime(Number(event.target.value))}
-              />
-              <div className="vod-control-row">
-                <div className="vod-control-group">
-                  <button
-                    className="vod-icon-button"
-                    aria-label={playing ? "일시 정지" : "재생"}
-                    onClick={() => setPlaying((current) => !current)}
-                  >
-                    {playing ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
-                  </button>
-                  <span>{formatTime(currentTime)} / {formatTime(videoDuration)}</span>
+          <section className="vod-player-section" ref={videoRef} aria-label={t("pages.videoPlayer")}>
+            <div className="vod-player-screen vod-public-player">
+              {selectedSource ? (
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${selectedSource.videoId}?rel=0`}
+                  title={`${selectedSource.creator} - ${selectedSource.title}`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
+              ) : (
+                <div className="course-access-message">
+                  <p>이 섹션에 연결된 공개 학습 영상을 찾지 못했어요.</p>
                 </div>
-                <div className="vod-control-group">
-                  <Volume2 size={17} />
-                  <span className="vod-quality-label">데모 재생</span>
-                </div>
-              </div>
+              )}
             </div>
             <p className="vod-demo-note">
-              현재 강의 영상은 데모 플레이어 UI로 제공됩니다. 강의 재생 위치와 학습 섹션을 둘러볼 수 있어요.
+              {selectedSource ? (
+                <>
+                  <a
+                    href={`https://www.youtube.com/watch?v=${selectedSource.videoId}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {selectedSource.creator} · {selectedSource.title}
+                  </a>
+                  {" — "}
+                </>
+              ) : null}
+              {t("pages.publicVideoNotice")}
             </p>
           </section>
 
@@ -267,41 +227,61 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
               <p>{selectedLesson}</p>
             </div>
             <div className="vod-live-status">
-              <span className={connected ? "vod-live-status--connected" : ""}><Signal size={15} /> {connected ? "소통 연결됨" : "연결 중"}</span>
-              <small><MessageCircle size={14} /> {participantCount}명 참여 중</small>
+              <span className={connected ? "vod-live-status--connected" : ""}><Signal size={15} /> {connected ? t("pages.connected") : t("pages.connecting")}</span>
+              <small><MessageCircle size={14} /> {t("pages.participants", { count: participantCount })}</small>
             </div>
           </section>
 
           <section className="vod-instructor-banner">
             <span className="course-instructor-avatar">{course.teacher.slice(0, 1)}</span>
-            <div><small>강의자와 함께하는 학습 공간</small><strong>{course.teacher}</strong></div>
-            <span className="vod-instructor-note">채팅으로 질문하고 학습 팁을 나눠보세요.</span>
+            <div><small>{t("pages.instructorSpace")}</small><strong>{course.teacher}</strong></div>
+            <span className="vod-instructor-note">{t("pages.instructorHint")}</span>
           </section>
 
           <section className="vod-curriculum-panel">
             <div className="course-detail-section-heading">
               <span>YOUR LEARNING PATH</span>
-              <h2>커리큘럼</h2>
+              <h2>{t("pages.curriculum")}</h2>
             </div>
             <div className="vod-curriculum-list">
               {plan.chapters.map((chapter, chapterIndex) => (
                 <details key={chapter.title} open={chapterIndex === 0}>
                   <summary>
                     <span className="course-chapter-number">{String(chapterIndex + 1).padStart(2, "0")}</span>
-                    <span>{chapter.title}<small>{chapter.lessons.length}개 강의</small></span>
+                    <span>{chapter.title}<small>{t("pages.lessonCount", { count: chapter.lessons.length })}</small></span>
                     <ChevronDown size={16} />
                   </summary>
                   <ol>
                     {chapter.lessons.map((lesson, lessonIndex) => (
-                      <li key={lesson}>
-                        <button
-                          className={selectedLesson === lesson ? "vod-lesson--active" : ""}
-                          onClick={() => playLesson(lesson)}
-                        >
-                          <Play size={13} /> {lessonIndex + 1}. {lesson}
-                        </button>
-                        <small>{8 + ((chapterIndex * 7 + lessonIndex * 5) % 12)}분</small>
-                      </li>
+                      (() => {
+                        const lessonVideo = getLessonVideo(
+                          course,
+                          lesson,
+                          plan.chapters
+                            .slice(0, chapterIndex)
+                            .reduce((total, previousChapter) => total + previousChapter.lessons.length, 0) + lessonIndex,
+                        );
+                        return (
+                          <li key={lesson}>
+                            <button
+                              className={selectedLesson === lesson ? "vod-lesson--active" : ""}
+                              onClick={() => playLesson(lesson)}
+                            >
+                              <Play size={13} /> {lessonIndex + 1}. {lesson}
+                            </button>
+                            {lessonVideo && (
+                              <a
+                                className="vod-lesson-source"
+                                href={`https://www.youtube.com/watch?v=${lessonVideo.videoId}`}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {lessonVideo.creator} · {t("pages.openSource")}
+                              </a>
+                            )}
+                          </li>
+                        );
+                      })()
                     ))}
                   </ol>
                 </details>
