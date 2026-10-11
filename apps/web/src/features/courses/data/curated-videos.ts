@@ -152,7 +152,7 @@ export const curatedVideos: CuratedVideo[] = [
   {
     id: "programmers-service-growth",
     category: "개발",
-    title: "[프로그래머스 컨퍼런스] 모두의 성장을 위한 서비스 만들기",
+    title: "[프로그래머스 컨퍼런스 1st] 모두의 성장을 위한 서비스 만들기: solved.ac 개발 경험을 토대로(박수현/solved.ac)",
     creator: "프로그래머스",
     videoId: "ggD9ry05axw",
     channelUrl: "https://www.youtube.com/@programmerschannel",
@@ -243,7 +243,7 @@ export const curatedVideos: CuratedVideo[] = [
     title: "물가를 예측하는 인공지능 - Python",
     creator: "빵형의 개발도상국",
     videoId: "C_MOtffSues",
-    channelUrl: "https://www.youtube.com/@bbanghyung",
+    channelUrl: "https://www.youtube.com/@bbanghyong",
     summary: "Python으로 예측 문제를 구성하고 데이터에서 패턴을 찾습니다.",
     subcategories: ["머신러닝", "Python 데이터 분석"],
     keywords: ["머신러닝", "Python", "예측", "모델"],
@@ -427,7 +427,7 @@ export const curatedVideos: CuratedVideo[] = [
   {
     id: "programmers-developer-resume",
     category: "커리어",
-    title: "경력 개발자 이력서, 이렇게 쓰면 합격합니다",
+    title: "경력 개발자 이력서,이렇게 쓰면 합격합니다🌟 | 개발자 이력서 클리닉 2편",
     creator: "프로그래머스",
     videoId: "uTR7Bt1Ipqk",
     channelUrl: "https://www.youtube.com/@programmerschannel",
