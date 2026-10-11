@@ -10,6 +10,16 @@ import {
   type LearningCategory,
 } from "../data/curated-videos";
 
+const categoryTranslationKeys: Record<LearningCategory | "전체", string> = {
+  전체: "all",
+  개발: "development",
+  디자인: "design",
+  "데이터 사이언스": "data",
+  "업무 생산성": "productivity",
+  "AI 기술": "ai",
+  커리어: "career",
+};
+
 export function VideoLibrary() {
   const { t } = useTranslation();
   const [category, setCategory] = useState<LearningCategory | "전체">("전체");
@@ -21,14 +31,14 @@ export function VideoLibrary() {
   return (
     <main className="video-library-page">
       <header className="topbar video-library-header">
-        <Link className="brand" href="/" aria-label="Classmate 홈">
+        <Link className="brand" href="/" aria-label={t("pages.homeBack")}>
           <span className="brand-mark">✳</span>
           classmate<span className="brand-period">.</span>
         </Link>
-        <nav className="course-detail-nav" aria-label="메인 메뉴">
-          <Link className="nav-link" href="/classes">강의</Link>
-          <Link className="nav-link nav-link--active" href="/resources">무료 영상</Link>
-          <Link className="nav-link" href="/#live">라이브</Link>
+        <nav className="course-detail-nav" aria-label={t("pages.mainNavigation")}>
+          <Link className="nav-link" href="/classes">{t("nav.courses")}</Link>
+          <Link className="nav-link nav-link--active" href="/resources">{t("nav.videos")}</Link>
+          <Link className="nav-link" href="/#live">{t("nav.live")}</Link>
         </nav>
         <AccountMenu />
       </header>
@@ -39,17 +49,8 @@ export function VideoLibrary() {
         <p className="video-library-intro">
           {t("library.description")}
         </p>
-        <div className="video-library-filters" role="group" aria-label="영상 분야">
+        <div className="video-library-filters" role="group" aria-label={t("pages.videoLibraryFilter")}>
           {(["전체", ...learningCategories] as const).map((item) => {
-            const categoryKey: Record<LearningCategory | "전체", string> = {
-              전체: "all",
-              개발: "development",
-              디자인: "design",
-              "데이터 사이언스": "data",
-              "업무 생산성": "productivity",
-              "AI 기술": "ai",
-              커리어: "career",
-            };
             return (
             <button
               key={item}
@@ -58,7 +59,7 @@ export function VideoLibrary() {
               className={category === item ? "video-library-filter--active" : ""}
               onClick={() => setCategory(item)}
             >
-              {t(`categories.${categoryKey[item]}`)}
+              {t(`categories.${categoryTranslationKeys[item]}`)}
             </button>
             );
           })}
@@ -80,14 +81,7 @@ export function VideoLibrary() {
                 />
               </div>
               <div className="public-video-copy">
-                <span>{t(`categories.${{
-                  개발: "development",
-                  디자인: "design",
-                  "데이터 사이언스": "data",
-                  "업무 생산성": "productivity",
-                  "AI 기술": "ai",
-                  커리어: "career",
-                }[video.category]}`)}</span>
+                <span>{t(`categories.${categoryTranslationKeys[video.category]}`)}</span>
                 <h2>{video.title}</h2>
                 <p>{video.summary}</p>
                 <div>
@@ -101,15 +95,15 @@ export function VideoLibrary() {
           ))}
         </div>
         <p className="video-library-disclaimer">
-          Public YouTube embeds remain under their original creators&apos; control. If a video is unavailable, visit its source channel.
+          {t("pages.videoLibraryDisclaimer")}
         </p>
       </section>
       <footer className="footer video-library-footer">
         <Link className="brand" href="/">
           <span className="brand-mark">✳</span>classmate<span className="brand-period">.</span>
         </Link>
-        <Link href="/classes">강의 둘러보기</Link>
-        <span>공개 콘텐츠는 원본 채널의 권리를 존중해 임베드로 제공합니다.</span>
+        <Link href="/classes">{t("pages.browseCourses")}</Link>
+        <span>{t("pages.videoLibraryFooter")}</span>
       </footer>
     </main>
   );

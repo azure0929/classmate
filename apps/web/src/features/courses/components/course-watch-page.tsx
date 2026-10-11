@@ -35,6 +35,14 @@ interface CourseWatchPageProps {
 }
 
 type WatchTab = "chat" | "questions";
+const categoryTranslationKeys: Record<Course["category"], string> = {
+  개발: "development",
+  디자인: "design",
+  "데이터 사이언스": "data",
+  "업무 생산성": "productivity",
+  "AI 기술": "ai",
+  커리어: "career",
+};
 
 const signalingUrl =
   process.env.NEXT_PUBLIC_REALTIME_URL ?? "http://localhost:4001";
@@ -55,7 +63,7 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
   const videoRef = useRef<HTMLDivElement>(null);
   const { user, ready } = useDemoSession();
   const requestLogin = useLoginRequired();
-  const { t } = useTranslation();
+  const { i18n, t } = useTranslation();
   const roomId = `vod-${course.id}`;
   const author = user?.name ?? "지민";
   const {
@@ -109,11 +117,11 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
     event.preventDefault();
     if (!questionText.trim()) return;
     if (!connected || !askQuestion(questionText, author)) {
-      setQuestionNotice("실시간 서버 연결 후 질문을 남길 수 있어요.");
+      setQuestionNotice(t("pages.connectionRequired"));
       return;
     }
     setQuestionText("");
-    setQuestionNotice("질문을 등록했어요. 이 강의를 보는 사람들과 함께 확인할 수 있어요.");
+    setQuestionNotice(t("pages.questionCreated"));
     window.setTimeout(() => setQuestionNotice(""), 3000);
   };
 
@@ -133,7 +141,7 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
   };
 
   const removeQuestion = (questionId: string) => {
-    if (!window.confirm("질문을 삭제할까요?")) return;
+    if (!window.confirm(t("pages.deleteQuestionConfirm"))) return;
     deleteQuestion(questionId);
   };
 
@@ -149,7 +157,7 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
     return (
       <main className="course-watch-page">
         <header className="course-watch-header">
-          <Link className="brand" href="/" aria-label="Classmate 홈">
+          <Link className="brand" href="/" aria-label={t("pages.homeBack")}>
             <span className="brand-mark">✳</span>
             classmate<span className="brand-period">.</span>
           </Link>
@@ -173,7 +181,7 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
   return (
     <main className="course-watch-page">
       <header className="course-watch-header">
-        <Link className="brand" href="/" aria-label="Classmate 홈">
+        <Link className="brand" href="/" aria-label={t("pages.homeBack")}>
           <span className="brand-mark">✳</span>
           classmate<span className="brand-period">.</span>
         </Link>
@@ -199,7 +207,7 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
                 />
               ) : (
                 <div className="course-access-message">
-                  <p>이 섹션에 연결된 공개 학습 영상을 찾지 못했어요.</p>
+                  <p>{t("pages.publicVideoUnavailable")}</p>
                 </div>
               )}
             </div>
@@ -222,7 +230,7 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
 
           <section className="vod-lesson-heading">
             <div>
-              <div className="course-detail-category">{course.category} / {course.subcategory}</div>
+              <div className="course-detail-category">{t(`categories.${categoryTranslationKeys[course.category]}`)} / {course.subcategory}</div>
               <h1>{title}</h1>
               <p>{selectedLesson}</p>
             </div>
@@ -240,7 +248,7 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
 
           <section className="vod-curriculum-panel">
             <div className="course-detail-section-heading">
-              <span>YOUR LEARNING PATH</span>
+              <span>{t("pages.learningPath")}</span>
               <h2>{t("pages.curriculum")}</h2>
             </div>
             <div className="vod-curriculum-list">
@@ -290,15 +298,15 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
           </section>
         </div>
 
-        <aside className="vod-interaction-panel" aria-label="실시간 소통과 Q&A">
+        <aside className="vod-interaction-panel" aria-label={t("pages.realtimeInteraction")}>
           <div className="vod-interaction-header">
             <div>
-              <span>LEARNING TOGETHER</span>
-              <h2>실시간 소통</h2>
+              <span>{t("pages.learningTogether")}</span>
+              <h2>{t("pages.realtimeLearning")}</h2>
             </div>
             <span className={`vod-connection-dot${connected ? " vod-connection-dot--connected" : ""}`} />
           </div>
-          <div className="vod-interaction-tabs" role="tablist" aria-label="소통 유형">
+          <div className="vod-interaction-tabs" role="tablist" aria-label={t("pages.communicationType")}>
             <button
               role="tab"
               id="vod-chat-tab"
@@ -307,7 +315,7 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
               className={tab === "chat" ? "vod-tab--active" : ""}
               onClick={() => setTab("chat")}
             >
-              실시간 채팅
+              {t("pages.liveChat")}
             </button>
             <button
               role="tab"
@@ -317,7 +325,7 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
               className={tab === "questions" ? "vod-tab--active" : ""}
               onClick={() => setTab("questions")}
             >
-              공개 Q&A <span>{questions.length}</span>
+              {t("pages.publicQa")} <span>{questions.length}</span>
             </button>
           </div>
 
@@ -330,7 +338,7 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
             >
               <div className="vod-panel-description">
                 <MessageCircle size={14} />
-                <span>강의자와 학습자가 함께 나누는 실시간 대화예요.</span>
+                <span>{t("pages.liveChatDescription")}</span>
               </div>
               <ChatFeed
                 messages={messages}
@@ -349,22 +357,22 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
             >
               <div className="vod-panel-description">
                 <MessageCircle size={14} />
-                <span>질문은 강의를 보는 모든 사람에게 공개됩니다.</span>
+                <span>{t("pages.qaDescription")}</span>
               </div>
               <form className="vod-question-form" onSubmit={submitQuestion}>
-                <label htmlFor="vod-question">강의 내용에 대해 질문해 보세요</label>
+                <label htmlFor="vod-question">{t("pages.questionPrompt")}</label>
                 <textarea
                   id="vod-question"
                   value={questionText}
                   onChange={(event) => setQuestionText(event.target.value)}
-                  placeholder="막히는 부분이나 더 알고 싶은 내용을 적어주세요."
+                  placeholder={t("pages.questionPlaceholder")}
                   maxLength={1000}
                   required
                 />
                 <div>
                   <small>{questionText.length}/1000</small>
                   <button type="submit" disabled={!connected || !questionText.trim()}>
-                    <Send size={14} /> 질문 남기기
+                    <Send size={14} /> {t("pages.askQuestion")}
                   </button>
                 </div>
                 {questionNotice && <p className="vod-question-notice" role="status">{questionNotice}</p>}
@@ -373,8 +381,8 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
                 {questions.length === 0 ? (
                   <div className="vod-question-empty">
                     <MessageCircle size={22} />
-                    <strong>첫 질문을 남겨보세요</strong>
-                    <span>작성한 질문은 이 강의의 공개 Q&A에 표시됩니다.</span>
+                    <strong>{t("pages.firstQuestion")}</strong>
+                    <span>{t("pages.firstQuestionDescription")}</span>
                   </div>
                 ) : (
                   [...questions].reverse().map((question) => (
@@ -383,31 +391,34 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
                         <span>{question.author.slice(0, 1)}</span>
                         <strong>{question.author}</strong>
                         <time dateTime={question.createdAt}>
-                          {new Date(question.createdAt).toLocaleString("ko-KR", {
+                          {new Date(question.createdAt).toLocaleString(
+                            i18n.resolvedLanguage ?? "ko-KR",
+                            {
                             month: "numeric",
                             day: "numeric",
                             hour: "2-digit",
                             minute: "2-digit",
-                          })}
+                            },
+                          )}
                         </time>
                         {question.senderId === socket?.id && (
                           <div className="vod-question-actions">
                             <button
                               type="button"
-                              aria-label="질문 수정"
+                              aria-label={t("pages.editQuestion")}
                               onClick={() => {
                                 setEditingQuestionId(question.id);
                                 setEditingQuestionText(question.text);
                               }}
                             >
-                              <Pencil size={14} /> 수정
+                              <Pencil size={14} /> {t("pages.editAction")}
                             </button>
                             <button
                               type="button"
-                              aria-label="질문 삭제"
+                              aria-label={t("pages.deleteQuestion")}
                               onClick={() => removeQuestion(question.id)}
                             >
-                              <Trash2 size={14} /> 삭제
+                              <Trash2 size={14} /> {t("pages.deleteQuestion")}
                             </button>
                           </div>
                         )}
@@ -418,7 +429,7 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
                           onSubmit={(event) => saveQuestionEdit(event, question.id)}
                         >
                           <textarea
-                            aria-label="질문 내용 수정"
+                            aria-label={t("pages.questionContent")}
                             value={editingQuestionText}
                             onChange={(event) =>
                               setEditingQuestionText(event.target.value)
@@ -429,23 +440,23 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
                           <div>
                             <small>{editingQuestionText.length}/1000</small>
                             <button type="button" onClick={() => setEditingQuestionId(null)}>
-                              <X size={14} /> 취소
+                              <X size={14} /> {t("pages.cancelEdit")}
                             </button>
                             <button type="submit" disabled={!editingQuestionText.trim()}>
-                              <Check size={14} /> 저장
+                              <Check size={14} /> {t("pages.saveEdit")}
                             </button>
                           </div>
                         </form>
                       ) : (
                         <p>{question.text}</p>
                       )}
-                      {question.editedAt && <small className="vod-question-edited">수정됨</small>}
+                      {question.editedAt && <small className="vod-question-edited">{t("pages.edited")}</small>}
                     </article>
                   ))
                 )}
               </div>
               {connected && (
-                <p className="vod-qa-shared-note"><Check size={13} /> 같은 강의에 접속한 학습자와 실시간 공유 중</p>
+                <p className="vod-qa-shared-note"><Check size={13} /> {t("pages.sharedInRoom")}</p>
               )}
             </section>
           )}

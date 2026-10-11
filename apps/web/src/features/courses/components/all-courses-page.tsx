@@ -16,6 +16,13 @@ const categories = ["전체", ...courseCategories.map(({ name }) => name)];
 const sortOptions = ["추천 순", "낮은 가격순", "높은 가격 순", "평점 순", "인기 순"] as const;
 const PAGE_SIZE = 20;
 type SortOption = (typeof sortOptions)[number];
+const sortTranslationKeys: Record<SortOption, string> = {
+  "추천 순": "pages.sortRecommended",
+  "낮은 가격순": "pages.sortLowPrice",
+  "높은 가격 순": "pages.sortHighPrice",
+  "평점 순": "pages.sortRating",
+  "인기 순": "pages.sortPopular",
+};
 const categoryTranslationKeys: Record<string, string> = {
   전체: "all",
   개발: "development",
@@ -125,7 +132,7 @@ export function AllCoursesPage() {
           <span className="brand-mark"><Sparkles size={17} /></span>
           classmate<span className="brand-period">.</span>
         </a>
-        <nav className="all-courses-nav" aria-label="메인 메뉴">
+        <nav className="all-courses-nav" aria-label={t("pages.mainNavigation")}>
           <a className="nav-link nav-link--active" href="/classes">{t("nav.courses")}</a>
           <a className="nav-link" href="/resources">{t("nav.videos")}</a>
           <a className="nav-link" href="/#live">{t("nav.live")}</a>
@@ -134,8 +141,8 @@ export function AllCoursesPage() {
         <form className="search-box all-courses-search" onSubmit={handleSearch} role="search">
           <Search size={16} />
           <input
-            aria-label="강의 검색"
-            placeholder="강의명, 기술, 강사 검색"
+            aria-label={t("pages.searchAria")}
+            placeholder={t("pages.searchPlaceholder")}
             value={search}
             onChange={(event) => {
               setSearch(event.target.value);
@@ -146,7 +153,7 @@ export function AllCoursesPage() {
             <button
               className="all-courses-clear"
               type="button"
-              aria-label="검색어 지우기"
+              aria-label={t("pages.searchClear")}
               onClick={() => {
                 setSearch("");
                 setSubmittedSearch("");
@@ -157,7 +164,7 @@ export function AllCoursesPage() {
               <X size={14} />
             </button>
           )}
-          <button className="search-submit" aria-label="강의 검색 실행" type="submit">
+          <button className="search-submit" aria-label={t("pages.searchSubmit")} type="submit">
             <Search size={16} />
           </button>
         </form>
@@ -166,16 +173,16 @@ export function AllCoursesPage() {
 
       <section className="all-courses-content">
         <a className="all-courses-back" href="/">
-          <ArrowLeft size={15} /> 홈으로 돌아가기
+          <ArrowLeft size={15} /> {t("pages.homeBack")}
         </a>
         <div className="all-courses-heading">
           <div>
-            <div className="section-kicker">FIND YOUR NEXT THING</div>
+            <div className="section-kicker">{t("pages.findNext")}</div>
             <h1>{t("pages.courseListTitle")}<span>.</span></h1>
             <p>{t("pages.courseListDescription")}</p>
           </div>
           <div className="all-courses-total" aria-live="polite">
-              <strong>{filteredCourses.length}</strong>개의 강의
+              {t("pages.courseCount", { count: filteredCourses.length })}
           </div>
         </div>
 
@@ -198,8 +205,8 @@ export function AllCoursesPage() {
         </div>
 
         {category !== "전체" && (
-          <div className="all-courses-subcategories" role="group" aria-label={`${category} 세부 분야`}>
-            <span>세부 분야</span>
+          <div className="all-courses-subcategories" role="group" aria-label={`${category} ${t("pages.subcategory")}`}>
+            <span>{t("pages.subcategory")}</span>
             <div>
               <button
                 className={subcategory === "전체" ? "all-courses-subcategory--active" : ""}
@@ -229,7 +236,7 @@ export function AllCoursesPage() {
         )}
 
         <div className="all-courses-toolbar">
-          <div className="all-courses-sort" role="tablist" aria-label="강의 정렬">
+          <div className="all-courses-sort" role="tablist" aria-label={t("pages.sortAria")}>
             {sortOptions.map((item) => (
               <button
                 key={item}
@@ -241,11 +248,11 @@ export function AllCoursesPage() {
                   setPage(1);
                 }}
               >
-                {item}
+                {t(sortTranslationKeys[item])}
               </button>
             ))}
           </div>
-          <span className="all-courses-page-count">{page} / {pageCount} 페이지</span>
+          <span className="all-courses-page-count">{t("pages.pageOfTotal", { page, total: pageCount })}</span>
         </div>
 
         {visibleCourses.length > 0 ? (
@@ -264,15 +271,15 @@ export function AllCoursesPage() {
         ) : (
           <div className="all-courses-empty">
             <Search size={22} />
-            <strong>검색 결과가 없어요.</strong>
-            <span>다른 검색어를 입력하거나 카테고리를 바꿔보세요.</span>
+            <strong>{t("pages.emptySearchTitle")}</strong>
+            <span>{t("pages.emptySearchDescription")}</span>
           </div>
         )}
 
         {pageCount > 1 && (
-          <nav className="all-courses-pagination" aria-label="강의 목록 페이지">
+          <nav className="all-courses-pagination" aria-label={t("pages.paginationLabel")}>
             <button
-              aria-label="이전 페이지"
+              aria-label={t("pages.previousPage")}
               disabled={page === 1}
               onClick={() => setPage((current) => Math.max(1, current - 1))}
             >
@@ -281,7 +288,7 @@ export function AllCoursesPage() {
             {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNumber) => (
               <button
                 key={pageNumber}
-                aria-label={`${pageNumber}페이지`}
+                aria-label={t("pages.pageNumber", { page: pageNumber })}
                 aria-current={page === pageNumber ? "page" : undefined}
                 className={page === pageNumber ? "all-courses-pagination--active" : ""}
                 onClick={() => setPage(pageNumber)}
@@ -290,7 +297,7 @@ export function AllCoursesPage() {
               </button>
             ))}
             <button
-              aria-label="다음 페이지"
+              aria-label={t("pages.nextPage")}
               disabled={page === pageCount}
               onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
             >
@@ -302,8 +309,8 @@ export function AllCoursesPage() {
 
       <footer className="footer all-courses-footer">
         <a className="brand" href="/"><span className="brand-mark"><Sparkles size={15} /></span>classmate<span className="brand-period">.</span></a>
-        <span>좋아하는 마음이 배움이 되는 곳</span>
-        <a href="mailto:support@classmate.kr">고객센터</a>
+      <span>{t("pages.footerTagline")}</span>
+      <a href="mailto:support@classmate.kr">{t("pages.support")}</a>
         <span>© 2026 Classmate Studio</span>
       </footer>
 

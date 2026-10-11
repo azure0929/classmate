@@ -22,6 +22,15 @@ interface CourseDetailPageProps {
   course: Course;
 }
 
+const categoryTranslationKeys: Record<Course["category"], string> = {
+  개발: "development",
+  디자인: "design",
+  "데이터 사이언스": "data",
+  "업무 생산성": "productivity",
+  "AI 기술": "ai",
+  커리어: "career",
+};
+
 export function CourseDetailPage({ course }: CourseDetailPageProps) {
   const { t } = useTranslation();
   const title = course.title.replace(/\n/g, " ");
@@ -35,17 +44,17 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
   return (
     <main className="course-detail-page">
       <header className="topbar course-detail-topbar">
-        <Link className="brand" href="/" aria-label="Classmate 홈">
+        <Link className="brand" href="/" aria-label={t("pages.homeBack")}>
           <span className="brand-mark">✳</span>
           classmate<span className="brand-period">.</span>
         </Link>
-        <nav className="course-detail-nav" aria-label="메인 메뉴">
+        <nav className="course-detail-nav" aria-label={t("pages.mainNavigation")}>
           <Link className="nav-link nav-link--active" href="/classes">{t("nav.courses")}</Link>
           <Link className="nav-link" href="/resources">{t("nav.videos")}</Link>
           <Link className="nav-link" href="/#live">{t("nav.live")}</Link>
           <Link className="nav-link" href="/#teachers">{t("nav.creators")}</Link>
         </nav>
-        <Link className="course-detail-home" href="/classes">전체 강의 보기</Link>
+        <Link className="course-detail-home" href="/classes">{t("pages.courseListTitle")}</Link>
         <AccountMenu />
       </header>
 
@@ -57,15 +66,14 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
         <section className="course-detail-hero">
           <div className="course-detail-copy">
             <div className="course-detail-category">
-              {course.category}<span>/</span>{course.subcategory}
+              {t(`categories.${categoryTranslationKeys[course.category]}`)}<span>/</span>{course.subcategory}
             </div>
             <h1>{title}</h1>
             <p className="course-detail-summary">
-            {course.subcategory}의 핵심을 익히고 실무 흐름에 적용하는 Classmate 큐레이션 커리큘럼입니다.
-            각 섹션에는 관련 주제를 다루는 국내 크리에이터의 공개 영상을 연결했어요.
+              {t("pages.detailSummary", { subcategory: course.subcategory })}
             </p>
             <div className="course-detail-rating">
-              <span><BookOpen size={15} /> {plan.chapters.length}개 섹션 · {lessonCount}개 강의</span>
+              <span><BookOpen size={15} /> {t("pages.sectionLessonCount", { sections: plan.chapters.length, lessons: lessonCount })}</span>
               <span><ExternalLink size={15} /> {t("lesson.sourceCount", { count: videoSources.length })}</span>
             </div>
             <div className="course-detail-instructor">
@@ -73,16 +81,16 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
               <span><small>{t("lesson.curation")}</small><strong>{course.teacher}</strong></span>
             </div>
             <CourseAccessLink className="button button--primary course-detail-cta" href={`/courses/${course.id}/watch`}>
-              <Play size={16} fill="currentColor" /> 보러가기
+              <Play size={16} fill="currentColor" /> {t("pages.openCourse")}
             </CourseAccessLink>
             <p className="course-detail-no-payment">
-              무료 공개 영상을 학습 참고 자료로 제공합니다. 원본 영상의 저작권과 재생은 각 크리에이터에게 있습니다.
+              {t("pages.freeVideoNotice")}
             </p>
           </div>
           <div
             className="course-detail-cover"
             role="img"
-            aria-label={`${title} 강의 대표 이미지`}
+            aria-label={`${title} ${t("pages.openCourse")}`}
             style={{
               backgroundColor: course.color,
               backgroundImage: `url("${course.image}")`,
@@ -104,7 +112,7 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
             <section className="course-detail-section course-detail-outcomes">
               <div className="course-detail-section-heading">
                 <span>WHAT YOU'LL LEARN</span>
-                <h2>이 강의에서 배울 내용</h2>
+                <h2>{t("pages.learnTitle")}</h2>
               </div>
               <ul>
                 {plan.outcomes.map((outcome) => (
@@ -115,16 +123,16 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
 
             <section className="course-detail-section">
               <div className="course-detail-section-heading">
-                <span>CURRICULUM</span>
+                <span>{t("pages.curriculum")}</span>
                 <h2>{t("pages.curriculum")}</h2>
-                <p>{plan.chapters.length}개 섹션 · {lessonCount}개 강의로 차근차근 학습해요.</p>
+                <p>{t("pages.sectionLessonCount", { sections: plan.chapters.length, lessons: lessonCount })}</p>
               </div>
               <div className="course-curriculum">
                 {plan.chapters.map((chapter, index) => (
                   <details className="course-curriculum-chapter" key={chapter.title} open={index === 0}>
                     <summary>
                       <span className="course-chapter-number">{String(index + 1).padStart(2, "0")}</span>
-                      <span className="course-chapter-title">{chapter.title}<small>{chapter.lessons.length}개 강의</small></span>
+                      <span className="course-chapter-title">{chapter.title}<small>{t("pages.chapterLessonCount", { count: chapter.lessons.length })}</small></span>
                       <Clock3 size={15} />
                     </summary>
                     <ol>
@@ -160,16 +168,16 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
 
             <section className="course-detail-section course-detail-project">
               <div className="course-detail-section-heading">
-                <span>HANDS-ON PROJECT</span>
-                <h2>강의 완주 후 만들 결과물</h2>
+                <span>{t("pages.projectEyebrow")}</span>
+                <h2>{t("pages.projectTitle")}</h2>
               </div>
               <p>{plan.project}</p>
             </section>
 
             <section className="course-detail-section course-detail-requirements">
               <div className="course-detail-section-heading">
-                <span>BEFORE YOU START</span>
-                <h2>이런 분께 추천해요</h2>
+                <span>{t("pages.audienceEyebrow")}</span>
+                <h2>{t("pages.audienceTitle")}</h2>
               </div>
               <ul>
                 {plan.requirements.map((requirement) => (
@@ -183,31 +191,29 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
                 {course.teacher.slice(0, 1)}
               </span>
               <div>
-                <small>{t("lesson.curation")}</small>
+                <small>{t("pages.curationProfile")}</small>
                 <h2>{course.teacher}</h2>
-                <p>
-                  {course.subcategory} 학습 흐름을 구성하고 국내 크리에이터의 공개 영상을 섹션별 참고 자료로 연결합니다.
-                </p>
+                <p>{t("pages.curationBio", { subcategory: course.subcategory })}</p>
               </div>
-              <CourseAccessLink href={`/courses/${course.id}/watch`}>{t("pages.videoPlayer")} <ArrowRight size={15} /></CourseAccessLink>
+              <CourseAccessLink href={`/courses/${course.id}/watch`}>{t("pages.openCourse")} <ArrowRight size={15} /></CourseAccessLink>
             </section>
           </div>
 
           <aside className="course-detail-aside">
-            <strong>{t("pages.relatedVideos")}</strong>
+            <strong>{t("pages.studyAtYourPace")}</strong>
             <span><BookOpen size={16} /> {t("lesson.sourceCount", { count: videoSources.length })}</span>
-            <span><Clock3 size={16} /> 섹션별 커리큘럼 제공</span>
-            <span><Users size={16} /> 실시간 소통과 공개 Q&A</span>
+            <span><Clock3 size={16} /> {t("pages.sectionCurriculum")}</span>
+            <span><Users size={16} /> {t("pages.liveChatAndQa")}</span>
             <CourseAccessLink className="button button--primary" href={`/courses/${course.id}/watch`}>
-              <Play size={15} fill="currentColor" /> 보러가기
+              <Play size={15} fill="currentColor" /> {t("pages.openCourse")}
             </CourseAccessLink>
           </aside>
         </div>
       </div>
       <footer className="footer course-detail-footer">
         <Link className="brand" href="/"><span className="brand-mark">✳</span>classmate<span className="brand-period">.</span></Link>
-        <span>좋아하는 마음이 배움이 되는 곳</span>
-        <Link href="/classes">강의 목록</Link>
+        <span>{t("pages.footerTagline")}</span>
+        <Link href="/classes">{t("pages.courseListTitle")}</Link>
         <span>© 2026 Classmate Studio</span>
       </footer>
     </main>

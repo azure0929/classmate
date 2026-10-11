@@ -29,6 +29,7 @@ import type { Course } from "../features/courses/types/course";
 import { CourseCatalog } from "../features/courses/components/course-catalog";
 import { CourseCatalogFallback } from "../features/courses/components/course-catalog-fallback";
 import { Classroom } from "../features/live-classroom/components/classroom";
+import { curatedVideos, learningCategories } from "../features/courses/data/curated-videos";
 
 interface PlatformNotification {
   id: string;
@@ -179,7 +180,7 @@ export function Platform() {
     const handleShortcut = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        document.querySelector<HTMLInputElement>('[aria-label="강의 검색"]')?.focus();
+        document.getElementById("platform-course-search")?.focus();
       }
     };
     window.addEventListener("keydown", handleShortcut);
@@ -189,11 +190,11 @@ export function Platform() {
   return (
     <main id="top">
       <header className="topbar">
-        <a className="brand" href="#top" aria-label="Classmate 홈">
+        <a className="brand" href="#top" aria-label={t("pages.homeBack")}>
           <span className="brand-mark"><Sparkles size={17} /></span>
           classmate<span className="brand-period">.</span>
         </a>
-        <nav className={`nav-links${mobileNavOpen ? " nav-links--open" : ""}`} aria-label="메인 메뉴">
+        <nav className={`nav-links${mobileNavOpen ? " nav-links--open" : ""}`} aria-label={t("pages.mainNavigation")}>
           <a className="nav-link nav-link--active" href="#classes" onClick={() => setMobileNavOpen(false)}>{t("nav.courses")}</a>
           <a className="nav-link" href="/resources" onClick={() => setMobileNavOpen(false)}>{t("nav.videos")}</a>
           <a className="nav-link" href="#live" onClick={() => setMobileNavOpen(false)}>{t("nav.live")}</a>
@@ -211,19 +212,20 @@ export function Platform() {
           >
             <Search size={16} />
             <input
-              aria-label="강의 검색"
-              placeholder="어떤 기술을 배워볼까요?"
+              id="platform-course-search"
+              aria-label={t("pages.searchAria")}
+              placeholder={t("pages.homeSearchPlaceholder")}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
             <kbd>⌘ K</kbd>
-            <button className="search-submit" aria-label="강의 검색 실행" type="submit">
+            <button className="search-submit" aria-label={t("pages.searchSubmit")} type="submit">
               <Search size={16} />
             </button>
           </form>
           <button
             className={`icon-button notification-button${unreadNotifications === 0 ? " notification-button--read" : ""}`}
-            aria-label="알림"
+            aria-label={t("pages.notificationsAria")}
             aria-expanded={notificationsOpen}
             aria-controls="platform-notifications"
             onClick={() => setNotificationsOpen((open) => !open)}
@@ -235,16 +237,16 @@ export function Platform() {
             <section
               className="notifications-panel"
               id="platform-notifications"
-              aria-label="알림"
+              aria-label={t("pages.notificationsAria")}
             >
               <div className="notifications-heading">
                 <div>
-                  <strong>알림</strong>
-                  <span>{unreadNotifications > 0 ? `읽지 않은 알림 ${unreadNotifications}개` : "모든 알림을 확인했어요"}</span>
+                  <strong>{t("notifications.title")}</strong>
+                  <span>{unreadNotifications > 0 ? t("notifications.unreadCount", { count: unreadNotifications }) : t("notifications.allRead")}</span>
                 </div>
                 {unreadNotifications > 0 && (
                   <button type="button" onClick={markAllNotificationsRead}>
-                    <CheckCheck size={14} /> 모두 읽음
+                    <CheckCheck size={14} /> {t("notifications.markAll")}
                   </button>
                 )}
               </div>
@@ -261,15 +263,15 @@ export function Platform() {
                   >
                     <span className="notification-item-indicator" aria-hidden="true" />
                     <span className="notification-item-copy">
-                      <strong>{notification.title}</strong>
-                      <span>{notification.description}</span>
-                      <small>{notification.time}</small>
+                      <strong>{t(`notifications.${notification.id}.title`)}</strong>
+                      <span>{t(`notifications.${notification.id}.description`)}</span>
+                      <small>{t(`notifications.${notification.id}.time`)}</small>
                     </span>
                     <ChevronRight size={15} />
                   </a>
                 ))}
                 {notifications.length === 0 && (
-                  <p className="notifications-empty">새로운 알림이 없어요.</p>
+                  <p className="notifications-empty">{t("notifications.empty")}</p>
                 )}
               </div>
             </section>
@@ -293,19 +295,19 @@ export function Platform() {
               <a className="button button--cream" href="#classes">{t("actions.browse")} <ArrowRight size={16} /></a>
               <button className="hero-text-button" onClick={openClassroom}>
                 <span className="play-circle"><Play size={12} fill="currentColor" /></span>
-                라이브 강의 입장
+                {t("pages.enterLiveClass")}
               </button>
             </div>
             <div className="hero-social">
-              <div className="avatar-stack"><i>하</i><i>민</i><i>유</i><i>+</i></div>
-              <span><strong>2,400+</strong>명이 오늘도 함께 배워요</span>
+              <div className="avatar-stack"><Play size={15} /></div>
+              <span><strong>{t("library.count", { count: curatedVideos.length })}</strong></span>
             </div>
           </div>
           <div className="hero-art">
             <div className="hero-image" />
-            <div className="hero-note"><span className="note-spark">✳</span><span>오늘의 영감<br /><b>작은 것부터 천천히</b></span></div>
-            <div className="live-float"><span className="live-pulse" /> LIVE NOW <b>드로잉 클럽</b><ArrowDownRight size={16} /></div>
-            <div className="hero-stamp">LEARN<br />TOGETHER<br /><span>✳</span></div>
+            <div className="hero-note"><span className="note-spark">✳</span><span>{t("pages.inspiration")}<br /><b>{t("pages.inspirationText")}</b></span></div>
+            <div className="live-float"><span className="live-pulse" /> {t("pages.liveDemoTime")} <ArrowDownRight size={16} /></div>
+            <div className="hero-stamp">{t("pages.learnTogetherStamp")}<br /><span>✳</span></div>
           </div>
           <div className="hero-index"><span>01</span><i /><span>03</span></div>
         </motion.div>
@@ -316,25 +318,45 @@ export function Platform() {
       </Suspense>
 
       <section className="creator-section" id="teachers">
-        <div><div className="section-kicker">MEET YOUR CREATORS</div><h2>좋아하는 일을 나누는 사람들<span>.</span></h2><p>각자의 경험을 다정하게 나눠주는 크리에이터를 만나보세요.</p></div>
+        <div><div className="section-kicker">{t("pages.creatorEyebrow")}</div><h2>{t("pages.creatorTitle")}<span>.</span></h2><p>{t("pages.creatorDescription")}</p></div>
         <div className="creator-tiles">
-          {[["민", "김민준", "소프트웨어 엔지니어 · 개발"], ["지", "박지수", "프론트엔드 개발자 · React"], ["도", "이도윤", "테크 리드 · 클라우드"], ["유", "오유리", "AI 엔지니어 · LLM"]].map(([initial, name, role]) => <article key={name}><span>{initial}</span><div><b>{name}</b><small>{role}</small></div><button aria-label={`${name} 강의 보기`} onClick={() => { setSearch(name); document.querySelector("#classes")?.scrollIntoView({ behavior: "smooth" }); }}>강의 보기 <ArrowRight size={13} /></button></article>)}
+          {learningCategories.map((category) => {
+            const video = curatedVideos.find((item) => item.category === category);
+            if (!video) return null;
+            const categoryKeys: Record<typeof category, string> = {
+              개발: "development",
+              디자인: "design",
+              "데이터 사이언스": "data",
+              "업무 생산성": "productivity",
+              "AI 기술": "ai",
+              커리어: "career",
+            };
+            return (
+              <article key={category}>
+                <span>{video.creator.slice(0, 1)}</span>
+                <div><b>{video.creator}</b><small>{t(`categories.${categoryKeys[category]}`)} · {video.title}</small></div>
+                <a href={video.channelUrl} target="_blank" rel="noreferrer" aria-label={`${video.creator} ${t("pages.visitChannel")}`}>
+                  {t("pages.visitChannel")} <ArrowRight size={13} />
+                </a>
+              </article>
+            );
+          })}
         </div>
       </section>
 
       <section className="live-banner">
         <div className="live-banner-icon"><Video size={24} /></div>
-        <div><div className="section-kicker">YOUR SEAT IS WAITING</div><h3>오늘 저녁, 같이 배워볼까요?</h3><p>드로잉 클럽 라이브가 잠시 후 시작해요.</p></div>
-        <Button onClick={openClassroom}>라이브 입장하기 <ArrowRight size={15} /></Button>
-        <span className="live-banner-time"><Clock3 size={14} /> 오후 8:00 시작</span>
+        <div><div className="section-kicker">{t("pages.liveSeatEyebrow")}</div><h3>{t("pages.liveBannerTitle")}</h3><p>{t("pages.liveBannerDescription")}</p></div>
+        <Button onClick={openClassroom}>{t("pages.joinLive")} <ArrowRight size={15} /></Button>
+        <span className="live-banner-time"><Clock3 size={14} /> {t("pages.liveDemoTime")}</span>
       </section>
 
-      <footer className="footer"><a className="brand" href="#top"><span className="brand-mark"><Sparkles size={15} /></span>classmate<span className="brand-period">.</span></a><span>좋아하는 마음이 배움이 되는 곳</span><a href="mailto:support@classmate.kr">고객센터</a><span>© 2026 Classmate Studio</span></footer>
+      <footer className="footer"><a className="brand" href="#top"><span className="brand-mark"><Sparkles size={15} /></span>classmate<span className="brand-period">.</span></a><span>{t("pages.footerTagline")}</span><a href="mailto:support@classmate.kr">{t("pages.support")}</a><span>© 2026 Classmate Studio</span></footer>
 
       <AnimatePresence>
         {classroom && <Classroom onClose={() => setClassroom(false)} />}
       </AnimatePresence>
-      <button className="mobile-menu" aria-label="메뉴" aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)}><Menu size={20} /></button>
+      <button className="mobile-menu" aria-label={t("pages.mobileMenu")} aria-expanded={mobileNavOpen} onClick={() => setMobileNavOpen((open) => !open)}><Menu size={20} /></button>
       <span className="sr-only"><BookOpen /><LayoutGrid /><MessageCircle /></span>
     </main>
   );

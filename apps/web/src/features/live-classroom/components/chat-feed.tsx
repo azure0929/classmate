@@ -2,6 +2,7 @@
 
 import { memo, useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { Check, Pencil, Trash2, X } from "lucide-react";
+import { useTranslation } from "@classmate/ui/localization";
 import type { ChatMessage } from "@classmate/realtime-types";
 
 interface ChatFeedProps {
@@ -24,6 +25,7 @@ const ChatMessageRow = memo(function ChatMessageRow({
   onEdit,
   onDelete,
 }: ChatMessageRowProps) {
+  const { i18n, t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(message.text);
   useEffect(() => {
@@ -45,7 +47,7 @@ const ChatMessageRow = memo(function ChatMessageRow({
             <div className="chat-message-actions">
               <button
                 type="button"
-                aria-label="메시지 수정"
+                aria-label={t("chat.edit")}
                 onClick={() => {
                   setText(message.text);
                   setEditing(true);
@@ -55,7 +57,7 @@ const ChatMessageRow = memo(function ChatMessageRow({
               </button>
               <button
                 type="button"
-                aria-label="메시지 삭제"
+                aria-label={t("chat.delete")}
                 onClick={() => onDelete(message.id)}
               >
                 <Trash2 size={13} />
@@ -66,16 +68,16 @@ const ChatMessageRow = memo(function ChatMessageRow({
         {editing ? (
           <form className="chat-message-edit" onSubmit={handleSubmit}>
             <input
-              aria-label="메시지 수정 내용"
+              aria-label={t("chat.editText")}
               value={text}
               onChange={(event) => setText(event.target.value)}
               maxLength={2000}
               autoFocus
             />
-            <button type="submit" aria-label="수정 저장" disabled={!text.trim()}>
+            <button type="submit" aria-label={t("chat.save")} disabled={!text.trim()}>
               <Check size={15} />
             </button>
-            <button type="button" aria-label="수정 취소" onClick={() => setEditing(false)}>
+            <button type="button" aria-label={t("chat.cancel")} onClick={() => setEditing(false)}>
               <X size={15} />
             </button>
           </form>
@@ -83,11 +85,11 @@ const ChatMessageRow = memo(function ChatMessageRow({
           <p>{message.text}</p>
         )}
         <small>
-          {new Date(message.createdAt).toLocaleTimeString("ko-KR", {
+          {new Date(message.createdAt).toLocaleTimeString(i18n.resolvedLanguage ?? "ko-KR", {
             hour: "2-digit",
             minute: "2-digit",
           })}
-          {message.editedAt && <span className="chat-message-edited"> · 수정됨</span>}
+          {message.editedAt && <span className="chat-message-edited"> · {t("chat.edited")}</span>}
         </small>
       </div>
     </div>
@@ -100,6 +102,7 @@ export const ChatFeed = memo(function ChatFeed({
   onEdit,
   onDelete,
 }: ChatFeedProps) {
+  const { t } = useTranslation();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -108,9 +111,9 @@ export const ChatFeed = memo(function ChatFeed({
 
   return (
     <div className="chat-feed" aria-live="polite" aria-relevant="additions">
-      <div className="chat-date">오늘 오후 8:00</div>
+      <div className="chat-date">{t("chat.today")}</div>
       <div className="chat-message chat-message--system">
-        클래스에 오신 걸 환영해요! 편하게 인사 나눠보세요 👋
+        {t("chat.welcome")}
       </div>
       {messages.map((message) => (
         <ChatMessageRow

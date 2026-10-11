@@ -67,15 +67,15 @@ export function CourseCatalog({ onSelect }: CourseCatalogProps) {
     <section className="class-section" id="classes">
       <div className="section-heading">
         <div>
-          <div className="section-kicker">FIND YOUR NEXT THING</div>
+          <div className="section-kicker">{t("pages.findNext")}</div>
           <h2>{t("pages.homeTitle")}<span>.</span></h2>
-          <p>지금 가장 많이 배우는 강의들을 만나보세요</p>
+          <p>{t("pages.courseListDescription")}</p>
         </div>
         <a className="view-all" href="/classes">{t("pages.courseListTitle")} <ArrowRight size={16} /></a>
       </div>
 
       <div className="filter-row">
-        <div className="category-tabs" role="tablist" aria-label="강의 카테고리">
+        <div className="category-tabs" role="tablist" aria-label={t("pages.videoLibraryFilter")}>
           {categories.map((item) => (
             <button
               key={item}
@@ -105,13 +105,13 @@ export function CourseCatalog({ onSelect }: CourseCatalogProps) {
           />
         ))}
         {visibleCourses.length === 0 && (
-          <div className="empty-state">해당 분야의 강의가 아직 없어요.</div>
+          <div className="empty-state">{t("pages.missingCatalogCourses")}</div>
         )}
       </div>
       {pageCount > 1 && (
-        <nav className="home-course-pagination" aria-label="추천 강의 페이지">
+        <nav className="home-course-pagination" aria-label={t("pages.paginationLabel")}>
           <button
-            aria-label="이전 페이지"
+            aria-label={t("pages.previousPage")}
             disabled={page === 1}
             onClick={() => setPage((current) => Math.max(1, current - 1))}
           >
@@ -120,7 +120,7 @@ export function CourseCatalog({ onSelect }: CourseCatalogProps) {
           {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNumber) => (
             <button
               key={pageNumber}
-              aria-label={`${pageNumber}페이지`}
+              aria-label={t("pages.pageNumber", { page: pageNumber })}
               aria-current={page === pageNumber ? "page" : undefined}
               className={page === pageNumber ? "home-course-pagination--active" : ""}
               onClick={() => setPage(pageNumber)}
@@ -129,7 +129,7 @@ export function CourseCatalog({ onSelect }: CourseCatalogProps) {
             </button>
           ))}
           <button
-            aria-label="다음 페이지"
+            aria-label={t("pages.nextPage")}
             disabled={page === pageCount}
             onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
           >

@@ -14,6 +14,15 @@ interface CourseCardProps {
   onToggleFavorite: (courseId: string) => void;
 }
 
+const categoryTranslationKeys: Record<Course["category"], string> = {
+  개발: "development",
+  디자인: "design",
+  "데이터 사이언스": "data",
+  "업무 생산성": "productivity",
+  "AI 기술": "ai",
+  커리어: "career",
+};
+
 export function CourseCard({
   course,
   index,
@@ -57,7 +66,7 @@ export function CourseCard({
           <Heart size={16} fill={favorite ? "currentColor" : "none"} />
         </button>
       </div>
-      <div className="course-meta"><span>{course.category} · {course.subcategory}</span></div>
+      <div className="course-meta"><span>{t(`categories.${categoryTranslationKeys[course.category]}`)} · {course.subcategory}</span></div>
       <button className="course-title" onClick={() => onSelect(course)}>{course.title}</button>
       <div className="course-teacher">
         {sources.slice(0, 2).map((source) => source.creator).join(" · ") || course.teacher}
