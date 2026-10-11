@@ -1,6 +1,14 @@
 import type { Course } from "../types/course";
+import { mockCourses } from "../api/mock-courses";
 import { getCourseLearningPlan } from "./course-curriculum";
 import { curatedVideos, type CuratedVideo } from "./curated-videos";
+
+export interface VideoCourseLessonMatch {
+  course: Course;
+  chapterTitle: string;
+  lesson: string;
+  lessonIndex: number;
+}
 
 const ignoredTerms = new Set([
   "그리고",
@@ -14,6 +22,7 @@ const ignoredTerms = new Set([
   "서비스",
 ]);
 const courseSourceCache = new Map<string, CuratedVideo[]>();
+const videoMatchCache = new Map<string, VideoCourseLessonMatch>();
 
 function terms(value: string) {
   return value
@@ -36,7 +45,16 @@ function scoreSource(course: Course, lesson: string, video: CuratedVideo) {
       )
     );
   }).length;
-  return exactSubcategory + keywordMatches * 10;
+  const videoContext = `${video.title} ${video.summary}`.toLocaleLowerCase("ko-KR");
+  const lessonContext = lesson.toLocaleLowerCase("ko-KR");
+  const intentMatches = [
+    [/소개|입문|기초|개념|시작/, /목표|개념|환경|문제 정의|기초/],
+    [/만들|구현|제작|프로젝트|개발/, /기능 구현|만들|완성|프로젝트|구성|연결/],
+    [/성능|최적화|개선|검증|테스트/, /성능|개선|검증|테스트|평가/],
+  ].filter(([videoIntent, lessonIntent]) =>
+    videoIntent.test(videoContext) && lessonIntent.test(lessonContext),
+  ).length;
+  return exactSubcategory + keywordMatches * 10 + intentMatches * 20;
 }
 
 export function getLessonVideo(
@@ -80,4 +98,42 @@ export function getCourseVideoSources(course: Course): CuratedVideo[] {
   const result = [...sources.values()];
   courseSourceCache.set(course.id, result);
   return result;
+}
+
+export function getVideoCourseLessonMatch(
+  video: CuratedVideo,
+): VideoCourseLessonMatch | undefined {
+  const cachedMatch = videoMatchCache.get(video.id);
+  if (cachedMatch) return cachedMatch;
+
+  const candidates = mockCourses.filter(
+    (course) =>
+      course.category === video.category &&
+      video.subcategories.includes(course.subcategory),
+  );
+  const courseCandidates = candidates.length > 0
+    ? candidates
+    : mockCourses.filter((course) => course.category === video.category);
+
+  let bestMatch: VideoCourseLessonMatch | undefined;
+  let bestScore = -1;
+
+  for (const course of courseCandidates) {
+    const plan = getCourseLearningPlan(course);
+    let lessonIndex = 0;
+
+    for (const chapter of plan.chapters) {
+      for (const lesson of chapter.lessons) {
+        const score = scoreSource(course, lesson, video);
+        if (score > bestScore) {
+          bestScore = score;
+          bestMatch = { course, chapterTitle: chapter.title, lesson, lessonIndex };
+        }
+        lessonIndex += 1;
+      }
+    }
+  }
+
+  if (bestMatch) videoMatchCache.set(video.id, bestMatch);
+  return bestMatch;
 }

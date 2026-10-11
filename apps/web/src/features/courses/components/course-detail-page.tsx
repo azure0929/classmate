@@ -13,13 +13,20 @@ import {
 } from "lucide-react";
 import type { Course } from "../types/course";
 import { getCourseLearningPlan } from "../data/course-curriculum";
-import { getCourseVideoSources, getLessonVideo } from "../data/course-video-matches";
+import {
+  getCourseVideoSources,
+  getLessonVideo,
+  type VideoCourseLessonMatch,
+} from "../data/course-video-matches";
+import type { CuratedVideo } from "../data/curated-videos";
 import { AccountMenu } from "@classmate/ui/account-menu";
 import { CourseAccessLink } from "./course-access-link";
 import { useTranslation } from "@classmate/ui/localization";
 
 interface CourseDetailPageProps {
   course: Course;
+  selectedVideo?: CuratedVideo;
+  selectedVideoMatch?: VideoCourseLessonMatch;
 }
 
 const categoryTranslationKeys: Record<Course["category"], string> = {
@@ -31,7 +38,11 @@ const categoryTranslationKeys: Record<Course["category"], string> = {
   커리어: "career",
 };
 
-export function CourseDetailPage({ course }: CourseDetailPageProps) {
+export function CourseDetailPage({
+  course,
+  selectedVideo,
+  selectedVideoMatch,
+}: CourseDetailPageProps) {
   const { t } = useTranslation();
   const title = course.title.replace(/\n/g, " ");
   const plan = getCourseLearningPlan(course);
@@ -127,6 +138,24 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
                 <h2>{t("pages.curriculum")}</h2>
                 <p>{t("pages.sectionLessonCount", { sections: plan.chapters.length, lessons: lessonCount })}</p>
               </div>
+              {selectedVideo && selectedVideoMatch && (
+                <div className="course-detail-video-match">
+                  <span>{t("library.matchedVideoLabel")}</span>
+                  <small>{t("library.matchedSession", {
+                    course: title,
+                    chapter: selectedVideoMatch.chapterTitle,
+                    lesson: selectedVideoMatch.lesson,
+                  })}</small>
+                  <strong>{selectedVideo.title}</strong>
+                  <p>{selectedVideo.summary}</p>
+                  <CourseAccessLink
+                    className="course-detail-session-link"
+                    href={`/courses/${course.id}/watch?video=${encodeURIComponent(selectedVideo.id)}&lesson=${encodeURIComponent(selectedVideoMatch.lesson)}`}
+                  >
+                    <Play size={14} fill="currentColor" /> {t("pages.watchThisSession")}
+                  </CourseAccessLink>
+                </div>
+              )}
               <div className="course-curriculum">
                 {plan.chapters.map((chapter, index) => (
                   <details className="course-curriculum-chapter" key={chapter.title} open={index === 0}>
@@ -146,14 +175,13 @@ export function CourseDetailPage({ course }: CourseDetailPageProps) {
                             <span><Play size={12} /> {lessonIndex + 1}. {lesson}</span>
                             <div className="course-lesson-actions">
                               {source && (
-                                <a
-                                  href={`https://www.youtube.com/watch?v=${source.videoId}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  aria-label={`${t("lesson.publicResource")}: ${source.title}`}
+                                <CourseAccessLink
+                                  className="course-lesson-watch"
+                                  href={`/courses/${course.id}/watch?video=${encodeURIComponent(source.id)}&lesson=${encodeURIComponent(lesson)}`}
+                                  ariaLabel={`${t("pages.watchThisSession")}: ${source.title}`}
                                 >
-                                  <ExternalLink size={13} /> {source.creator}
-                                </a>
+                                  <Play size={13} /> {t("pages.watchThisSession")}
+                                </CourseAccessLink>
                               )}
                               <small>{8 + ((index * 7 + lessonIndex * 5) % 12)}분</small>
                             </div>

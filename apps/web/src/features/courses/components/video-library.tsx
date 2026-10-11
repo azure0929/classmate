@@ -9,6 +9,7 @@ import {
   learningCategories,
   type LearningCategory,
 } from "../data/curated-videos";
+import { getVideoCourseLessonMatch } from "../data/course-video-matches";
 
 const categoryTranslationKeys: Record<LearningCategory | "전체", string> = {
   전체: "all",
@@ -68,31 +69,51 @@ export function VideoLibrary() {
           {t("library.count", { count: videos.length })}
         </p>
         <div className="video-library-grid">
-          {videos.map((video) => (
-            <article className="public-video-card" key={video.id}>
-              <div className="public-video-frame">
-                <iframe
-                  src={`https://www.youtube-nocookie.com/embed/${video.videoId}?rel=0`}
-                  title={`${video.creator} - ${video.title}`}
-                  loading="lazy"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerPolicy="strict-origin-when-cross-origin"
-                  allowFullScreen
-                />
-              </div>
-              <div className="public-video-copy">
-                <span>{t(`categories.${categoryTranslationKeys[video.category]}`)}</span>
-                <h2>{video.title}</h2>
-                <p>{video.summary}</p>
-                <div>
-                  <strong>{video.creator}</strong>
-                  <a href={video.channelUrl} target="_blank" rel="noreferrer">
-                    {t("library.channel")}
-                  </a>
+          {videos.map((video) => {
+            const match = getVideoCourseLessonMatch(video);
+            return (
+              <article className="public-video-card" key={video.id}>
+                <div className="public-video-frame">
+                  <iframe
+                    src={`https://www.youtube-nocookie.com/embed/${video.videoId}?rel=0`}
+                    title={`${video.creator} - ${video.title}`}
+                    loading="lazy"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  />
                 </div>
-              </div>
-            </article>
-          ))}
+                <div className="public-video-copy">
+                  <span>{t(`categories.${categoryTranslationKeys[video.category]}`)}</span>
+                  <h2>{video.title}</h2>
+                  <p>{video.summary}</p>
+                  {match && (
+                    <p className="public-video-course-match">
+                      {t("library.matchedSession", {
+                        course: match.course.title,
+                        chapter: match.chapterTitle,
+                        lesson: match.lesson,
+                      })}
+                    </p>
+                  )}
+                  <div>
+                    <strong>{video.creator}</strong>
+                    <a href={video.channelUrl} target="_blank" rel="noreferrer">
+                      {t("library.channel")}
+                    </a>
+                  </div>
+                  {match && (
+                    <Link
+                      className="public-video-course-link"
+                      href={`/courses/${match.course.id}?video=${encodeURIComponent(video.id)}`}
+                    >
+                      {t("library.openMatchedCourse")}
+                    </Link>
+                  )}
+                </div>
+              </article>
+            );
+          })}
         </div>
         <p className="video-library-disclaimer">
           {t("pages.videoLibraryDisclaimer")}

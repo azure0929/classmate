@@ -21,6 +21,7 @@ import { useTranslation } from "@classmate/ui/localization";
 import type { Course } from "../types/course";
 import { getCourseLearningPlan } from "../data/course-curriculum";
 import { getLessonVideo } from "../data/course-video-matches";
+import { curatedVideos } from "../data/curated-videos";
 import { useCourseQa } from "../hooks/use-course-qa";
 import { useDemoSession } from "@classmate/ui/use-demo-session";
 import {
@@ -32,6 +33,8 @@ import { ChatFeed } from "../../live-classroom/components/chat-feed";
 
 interface CourseWatchPageProps {
   course: Course;
+  initialVideoId?: string;
+  initialLesson?: string;
 }
 
 type WatchTab = "chat" | "questions";
@@ -47,14 +50,22 @@ const categoryTranslationKeys: Record<Course["category"], string> = {
 const signalingUrl =
   process.env.NEXT_PUBLIC_REALTIME_URL ?? "http://localhost:4001";
 
-export function CourseWatchPage({ course }: CourseWatchPageProps) {
+export function CourseWatchPage({
+  course,
+  initialVideoId,
+  initialLesson,
+}: CourseWatchPageProps) {
   const plan = getCourseLearningPlan(course);
   const title = course.title.replace(/\n/g, " ");
   const [socket, setSocket] = useState<RealtimeSocket | null>(null);
   const [tab, setTab] = useState<WatchTab>("chat");
   const [selectedLesson, setSelectedLesson] = useState(
-    () => plan.chapters[0]?.lessons[0] ?? "강의 소개",
+    () =>
+      initialLesson && plan.chapters.some((chapter) => chapter.lessons.includes(initialLesson))
+        ? initialLesson
+        : plan.chapters[0]?.lessons[0] ?? "강의 소개",
   );
+  const [selectedVideoId, setSelectedVideoId] = useState(initialVideoId);
   const [questionText, setQuestionText] = useState("");
   const [questionNotice, setQuestionNotice] = useState("");
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
@@ -81,11 +92,9 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
   const selectedLessonIndex = plan.chapters
     .flatMap((chapter) => chapter.lessons)
     .indexOf(selectedLesson);
-  const selectedSource = getLessonVideo(
-    course,
-    selectedLesson,
-    Math.max(0, selectedLessonIndex),
-  );
+  const selectedSource =
+    curatedVideos.find((video) => video.id === selectedVideoId) ??
+    getLessonVideo(course, selectedLesson, Math.max(0, selectedLessonIndex));
 
   useEffect(() => {
     if (!user) return;
@@ -125,8 +134,9 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
     window.setTimeout(() => setQuestionNotice(""), 3000);
   };
 
-  const playLesson = (lesson: string) => {
+  const playLesson = (lesson: string, videoId?: string) => {
     setSelectedLesson(lesson);
+    setSelectedVideoId(videoId);
     videoRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
@@ -273,19 +283,18 @@ export function CourseWatchPage({ course }: CourseWatchPageProps) {
                           <li key={lesson}>
                             <button
                               className={selectedLesson === lesson ? "vod-lesson--active" : ""}
-                              onClick={() => playLesson(lesson)}
+                              onClick={() => playLesson(lesson, lessonVideo?.id)}
                             >
                               <Play size={13} /> {lessonIndex + 1}. {lesson}
                             </button>
                             {lessonVideo && (
-                              <a
+                              <button
                                 className="vod-lesson-source"
-                                href={`https://www.youtube.com/watch?v=${lessonVideo.videoId}`}
-                                target="_blank"
-                                rel="noreferrer"
+                                type="button"
+                                onClick={() => playLesson(lesson, lessonVideo.id)}
                               >
-                                {lessonVideo.creator} · {t("pages.openSource")}
-                              </a>
+                                {lessonVideo.creator} · {t("pages.watchThisSession")}
+                              </button>
                             )}
                           </li>
                         );
