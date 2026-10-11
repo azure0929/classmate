@@ -80,7 +80,7 @@ export function CourseDetailPage({
             </div>
             <h1>{title}</h1>
             <p className="course-detail-summary">
-              {t("pages.detailSummary", { subcategory: course.subcategory })}
+              {selectedVideo?.summary ?? t("pages.detailSummary", { subcategory: course.subcategory })}
             </p>
             <div className="course-detail-rating">
               <span><BookOpen size={15} /> {t("pages.sectionLessonCount", { sections: plan.chapters.length, lessons: lessonCount })}</span>

@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { CourseWatchPage } from "../../../../features/courses/components/course-watch-page";
-import { mockCourses } from "../../../../features/courses/api/mock-courses";
-import { curatedVideos } from "../../../../features/courses/data/curated-videos";
+import {
+  curatedCourses,
+  curatedVideos,
+} from "../../../../features/courses/data/curated-videos";
 import { getVideoCourseLessonMatch } from "../../../../features/courses/data/course-video-matches";
 import { getCourseLearningPlan } from "../../../../features/courses/data/course-curriculum";
 
@@ -15,16 +17,20 @@ export default async function CourseWatchRoute({
   searchParams,
 }: CourseWatchRouteProps) {
   const [{ courseId }, query] = await Promise.all([params, searchParams]);
-  const course = mockCourses.find((item) => item.id === courseId);
+  const course = curatedCourses.find((item) => item.id === courseId);
 
   if (!course) notFound();
 
   const videoId = Array.isArray(query.video) ? query.video[0] : query.video;
   const requestedLesson = Array.isArray(query.lesson) ? query.lesson[0] : query.lesson;
-  const video = curatedVideos.find((item) => item.id === videoId);
+  const video =
+    curatedVideos.find((item) => item.id === videoId) ??
+    curatedVideos.find((item) => item.id === course.curatedVideoId);
   const videoMatch = video ? getVideoCourseLessonMatch(video) : undefined;
   const selectedVideo =
-    video?.category === course.category &&
+    video &&
+    video.id === course.curatedVideoId &&
+    video.category === course.category &&
     video.subcategories.includes(course.subcategory)
       ? video
       : undefined;

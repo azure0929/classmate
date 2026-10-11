@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { CourseDetailPage } from "../../../features/courses/components/course-detail-page";
-import { mockCourses } from "../../../features/courses/api/mock-courses";
-import { curatedVideos } from "../../../features/courses/data/curated-videos";
+import {
+  curatedCourses,
+  curatedVideos,
+} from "../../../features/courses/data/curated-videos";
 import {
   getVideoCourseLessonMatch,
   type VideoCourseLessonMatch,
@@ -15,7 +17,7 @@ interface CoursePageProps {
 
 export default async function CoursePage({ params, searchParams }: CoursePageProps) {
   const [{ courseId }, query] = await Promise.all([params, searchParams]);
-  const course = mockCourses.find((item) => item.id === courseId);
+  const course = curatedCourses.find((item) => item.id === courseId);
 
   if (!course) notFound();
 

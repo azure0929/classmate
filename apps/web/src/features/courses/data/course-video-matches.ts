@@ -1,7 +1,6 @@
 import type { Course } from "../types/course";
-import { mockCourses } from "../api/mock-courses";
+import { curatedCourses, curatedVideos, type CuratedVideo } from "./curated-videos";
 import { getCourseLearningPlan } from "./course-curriculum";
-import { curatedVideos, type CuratedVideo } from "./curated-videos";
 
 export interface VideoCourseLessonMatch {
   course: Course;
@@ -115,37 +114,15 @@ export function getVideoCourseLessonMatch(
   const cachedMatch = videoMatchCache.get(video.id);
   if (cachedMatch) return cachedMatch;
 
-  const candidates = mockCourses.filter(
-    (course) =>
-      !course.curatedVideoId &&
-      course.category === video.category &&
-      video.subcategories.includes(course.subcategory),
-  );
-  const courseCandidates = candidates.length > 0
-    ? candidates
-    : mockCourses.filter(
-        (course) => !course.curatedVideoId && course.category === video.category,
-      );
+  const course = curatedCourses.find((item) => item.curatedVideoId === video.id);
+  if (!course) return undefined;
 
-  let bestMatch: VideoCourseLessonMatch | undefined;
-  let bestScore = -1;
+  const plan = getCourseLearningPlan(course);
+  const chapter = plan.chapters[0];
+  const lesson = chapter?.lessons[0];
+  if (!chapter || !lesson) return undefined;
 
-  for (const course of courseCandidates) {
-    const plan = getCourseLearningPlan(course);
-    let lessonIndex = 0;
-
-    for (const chapter of plan.chapters) {
-      for (const lesson of chapter.lessons) {
-        const score = scoreSource(course, lesson, video);
-        if (score > bestScore) {
-          bestScore = score;
-          bestMatch = { course, chapterTitle: chapter.title, lesson, lessonIndex };
-        }
-        lessonIndex += 1;
-      }
-    }
-  }
-
-  if (bestMatch) videoMatchCache.set(video.id, bestMatch);
-  return bestMatch;
+  const match = { course, chapterTitle: chapter.title, lesson, lessonIndex: 0 };
+  videoMatchCache.set(video.id, match);
+  return match;
 }

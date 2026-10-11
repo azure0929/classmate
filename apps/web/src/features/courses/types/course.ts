@@ -7,8 +7,8 @@ export interface Course {
   category: CourseCategory;
   subcategory: CourseSubcategory;
   price: number;
-  students: string;
-  rating: string;
+  students?: string;
+  rating?: string;
   image: string;
   color: string;
   label: string;

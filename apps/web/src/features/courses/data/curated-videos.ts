@@ -34,8 +34,6 @@ export function createCuratedVideoCourse(video: CuratedVideo): Course {
     category: video.category,
     subcategory,
     price: 0,
-    students: "0",
-    rating: "0.00",
     image: `https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg`,
     color: "#e7ede5",
     label: "FREE",
@@ -483,3 +481,5 @@ export const curatedVideos: CuratedVideo[] = [
     keywords: ["면접", "지원", "경험", "이력서"],
   },
 ];
+
+export const curatedCourses: Course[] = curatedVideos.map(createCuratedVideoCourse);

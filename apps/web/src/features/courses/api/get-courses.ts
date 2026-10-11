@@ -1,6 +1,5 @@
-import { mockCourses } from "./mock-courses";
+import { curatedCourses } from "../data/curated-videos";
 
 export async function getCourses() {
-  await new Promise((resolve) => setTimeout(resolve, 250));
-  return mockCourses;
+  return curatedCourses;
 }

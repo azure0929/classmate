@@ -7,7 +7,7 @@ import { AccountMenu } from "@classmate/ui/account-menu";
 import { useLoginRequired } from "@classmate/ui/login-required-provider";
 import { useTranslation } from "@classmate/ui/localization";
 import { useDemoSession } from "@classmate/ui/use-demo-session";
-import { mockCourses } from "../api/mock-courses";
+import { curatedCourses } from "../data/curated-videos";
 import type { Course } from "../types/course";
 import { courseCategories } from "../types/course-category";
 import { CourseCard } from "./course-card";
@@ -34,11 +34,11 @@ const categoryTranslationKeys: Record<string, string> = {
 };
 
 function popularity(course: Course) {
-  return Number(course.students.replaceAll(",", ""));
+  return Number(course.students?.replaceAll(",", "") ?? 0);
 }
 
 function recommendationScore(course: Course) {
-  return Number(course.rating) * 100 + Math.log1p(popularity(course)) * 2;
+  return Number(course.rating ?? 0) * 100 + Math.log1p(popularity(course)) * 2;
 }
 
 function compareCourses(sort: SortOption, first: Course, second: Course) {
@@ -48,7 +48,7 @@ function compareCourses(sort: SortOption, first: Course, second: Course) {
     case "높은 가격 순":
       return second.price - first.price;
     case "평점 순":
-      return Number(second.rating) - Number(first.rating);
+      return Number(second.rating ?? 0) - Number(first.rating ?? 0);
     case "인기 순":
       return popularity(second) - popularity(first);
     case "추천 순":
@@ -83,7 +83,7 @@ export function AllCoursesPage() {
 
   const filteredCourses = useMemo(() => {
     const normalizedSearch = submittedSearch.trim().toLocaleLowerCase("ko-KR");
-    return mockCourses
+    return curatedCourses
       .filter((course) => category === "전체" || course.category === category)
       .filter((course) => subcategory === "전체" || course.subcategory === subcategory)
       .filter(
@@ -98,6 +98,8 @@ export function AllCoursesPage() {
 
   const pageCount = Math.max(1, Math.ceil(filteredCourses.length / PAGE_SIZE));
   const visibleCourses = filteredCourses.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const hasRatingData = filteredCourses.some((course) => course.rating !== undefined);
+  const hasPopularityData = filteredCourses.some((course) => course.students !== undefined);
 
   const handleSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -241,6 +243,16 @@ export function AllCoursesPage() {
                 key={item}
                 role="tab"
                 aria-selected={sort === item}
+                disabled={
+                  (item === "평점 순" && !hasRatingData) ||
+                  (item === "인기 순" && !hasPopularityData)
+                }
+                title={
+                  (item === "평점 순" && !hasRatingData) ||
+                  (item === "인기 순" && !hasPopularityData)
+                    ? t("pages.courseSortUnavailable")
+                    : undefined
+                }
                 className={sort === item ? "all-courses-sort--active" : ""}
                 onClick={() => {
                   setSort(item);
