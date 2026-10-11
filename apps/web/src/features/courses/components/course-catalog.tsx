@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { AuthDialog } from "@classmate/ui/auth-dialog";
+import { useLoginRequired } from "@classmate/ui/login-required-provider";
+import { useTranslation } from "@classmate/ui/localization";
 import { useDemoSession } from "@classmate/ui/use-demo-session";
 import type { Course } from "../types/course";
 import { courseCategories } from "../types/course-category";
@@ -15,14 +16,23 @@ interface CourseCatalogProps {
 
 const categories = ["전체", ...courseCategories.map(({ name }) => name)];
 const PAGE_SIZE = 12;
+const categoryTranslationKeys: Record<string, string> = {
+  전체: "all",
+  개발: "development",
+  디자인: "design",
+  "데이터 사이언스": "data",
+  "업무 생산성": "productivity",
+  "AI 기술": "ai",
+  커리어: "career",
+};
 
 export function CourseCatalog({ onSelect }: CourseCatalogProps) {
   const [category, setCategory] = useState("전체");
   const [page, setPage] = useState(1);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [showAuth, setShowAuth] = useState(false);
-  const [pendingFavorite, setPendingFavorite] = useState<string | null>(null);
-  const { user, login } = useDemoSession();
+  const { user } = useDemoSession();
+  const requestLogin = useLoginRequired();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!user) setFavorites([]);
@@ -37,9 +47,13 @@ export function CourseCatalog({ onSelect }: CourseCatalogProps) {
   const visibleCourses = filteredCourses.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const toggleFavorite = (courseId: string) => {
     if (!user) {
-      window.alert("로그인을 해주세요.");
-      setPendingFavorite(courseId);
-      setShowAuth(true);
+      requestLogin(() => {
+        setFavorites((current) =>
+          current.includes(courseId)
+            ? current.filter((id) => id !== courseId)
+            : [...current, courseId],
+        );
+      });
       return;
     }
     setFavorites((current) =>
@@ -54,10 +68,10 @@ export function CourseCatalog({ onSelect }: CourseCatalogProps) {
       <div className="section-heading">
         <div>
           <div className="section-kicker">FIND YOUR NEXT THING</div>
-          <h2>요즘 이런 걸 배워요<span>.</span></h2>
+          <h2>{t("pages.homeTitle")}<span>.</span></h2>
           <p>지금 가장 많이 배우는 강의들을 만나보세요</p>
         </div>
-        <a className="view-all" href="/classes">전체 강의 보기 <ArrowRight size={16} /></a>
+        <a className="view-all" href="/classes">{t("pages.courseListTitle")} <ArrowRight size={16} /></a>
       </div>
 
       <div className="filter-row">
@@ -73,7 +87,7 @@ export function CourseCatalog({ onSelect }: CourseCatalogProps) {
                 setPage(1);
               }}
             >
-              {item}
+              {t(`categories.${categoryTranslationKeys[item]}`)}
             </button>
           ))}
         </div>
@@ -122,24 +136,6 @@ export function CourseCatalog({ onSelect }: CourseCatalogProps) {
             <ArrowRight size={15} />
           </button>
         </nav>
-      )}
-      {showAuth && (
-        <AuthDialog
-          initialMode="login"
-          onAuthenticated={(nextUser) => {
-            login(nextUser);
-            if (pendingFavorite) {
-              setFavorites((current) =>
-                current.includes(pendingFavorite)
-                  ? current.filter((id) => id !== pendingFavorite)
-                  : [...current, pendingFavorite],
-              );
-              setPendingFavorite(null);
-            }
-            setShowAuth(false);
-          }}
-          onClose={() => setShowAuth(false)}
-        />
       )}
     </section>
   );

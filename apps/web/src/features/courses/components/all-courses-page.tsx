@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, ArrowRight, Search, Sparkles, X } from "lucide-react";
 import { AccountMenu } from "@classmate/ui/account-menu";
-import { AuthDialog, type AuthUser } from "@classmate/ui/auth-dialog";
+import { useLoginRequired } from "@classmate/ui/login-required-provider";
+import { useTranslation } from "@classmate/ui/localization";
 import { useDemoSession } from "@classmate/ui/use-demo-session";
 import { mockCourses } from "../api/mock-courses";
 import type { Course } from "../types/course";
@@ -15,6 +16,15 @@ const categories = ["전체", ...courseCategories.map(({ name }) => name)];
 const sortOptions = ["추천 순", "낮은 가격순", "높은 가격 순", "평점 순", "인기 순"] as const;
 const PAGE_SIZE = 20;
 type SortOption = (typeof sortOptions)[number];
+const categoryTranslationKeys: Record<string, string> = {
+  전체: "all",
+  개발: "development",
+  디자인: "design",
+  "데이터 사이언스": "data",
+  "업무 생산성": "productivity",
+  "AI 기술": "ai",
+  커리어: "career",
+};
 
 function popularity(course: Course) {
   return Number(course.students.replaceAll(",", ""));
@@ -50,9 +60,9 @@ export function AllCoursesPage() {
   const [sort, setSort] = useState<SortOption>("추천 순");
   const [page, setPage] = useState(1);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [showAuth, setShowAuth] = useState(false);
-  const [pendingFavorite, setPendingFavorite] = useState<string | null>(null);
-  const { user, login } = useDemoSession();
+  const { user } = useDemoSession();
+  const requestLogin = useLoginRequired();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!user) setFavorites([]);
@@ -92,9 +102,13 @@ export function AllCoursesPage() {
 
   const toggleFavorite = (courseId: string) => {
     if (!user) {
-      window.alert("로그인을 해주세요.");
-      setPendingFavorite(courseId);
-      setShowAuth(true);
+      requestLogin(() => {
+        setFavorites((current) =>
+          current.includes(courseId)
+            ? current.filter((id) => id !== courseId)
+            : [...current, courseId],
+        );
+      });
       return;
     }
     setFavorites((current) =>
@@ -112,10 +126,10 @@ export function AllCoursesPage() {
           classmate<span className="brand-period">.</span>
         </a>
         <nav className="all-courses-nav" aria-label="메인 메뉴">
-          <a className="nav-link nav-link--active" href="/classes">강의</a>
-          <a className="nav-link" href="/resources">무료 영상</a>
-          <a className="nav-link" href="/#live">라이브</a>
-          <a className="nav-link" href="/#teachers">크리에이터</a>
+          <a className="nav-link nav-link--active" href="/classes">{t("nav.courses")}</a>
+          <a className="nav-link" href="/resources">{t("nav.videos")}</a>
+          <a className="nav-link" href="/#live">{t("nav.live")}</a>
+          <a className="nav-link" href="/#teachers">{t("nav.creators")}</a>
         </nav>
         <form className="search-box all-courses-search" onSubmit={handleSearch} role="search">
           <Search size={16} />
@@ -157,8 +171,8 @@ export function AllCoursesPage() {
         <div className="all-courses-heading">
           <div>
             <div className="section-kicker">FIND YOUR NEXT THING</div>
-            <h1>모든 강의<span>.</span></h1>
-            <p>관심 있는 기술과 분야를 선택해 나에게 맞는 학습을 시작해 보세요.</p>
+            <h1>{t("pages.courseListTitle")}<span>.</span></h1>
+            <p>{t("pages.courseListDescription")}</p>
           </div>
           <div className="all-courses-total" aria-live="polite">
               <strong>{filteredCourses.length}</strong>개의 강의
@@ -178,7 +192,7 @@ export function AllCoursesPage() {
                 setPage(1);
               }}
             >
-              {item}
+              {t(`categories.${categoryTranslationKeys[item]}`)}
             </button>
           ))}
         </div>
@@ -293,24 +307,6 @@ export function AllCoursesPage() {
         <span>© 2026 Classmate Studio</span>
       </footer>
 
-      {showAuth && (
-        <AuthDialog
-          initialMode="login"
-          onAuthenticated={(nextUser: AuthUser) => {
-            login(nextUser);
-            if (pendingFavorite) {
-              setFavorites((current) =>
-                current.includes(pendingFavorite)
-                  ? current.filter((id) => id !== pendingFavorite)
-                  : [...current, pendingFavorite],
-              );
-              setPendingFavorite(null);
-            }
-            setShowAuth(false);
-          }}
-          onClose={() => setShowAuth(false)}
-        />
-      )}
     </main>
   );
 }

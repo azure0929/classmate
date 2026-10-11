@@ -24,6 +24,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { AuthDialog, type AuthUser } from "@classmate/ui/auth-dialog";
 import { Button } from "@classmate/ui/button";
 import { LogoutConfirmDialog } from "@classmate/ui/logout-confirm-dialog";
+import { LanguageSwitcher } from "@classmate/ui/localization";
 import { useDemoSession } from "@classmate/ui/use-demo-session";
 
 type SectionId = "dashboard" | "classes" | "creators" | "calendar" | "live" | "settings" | "help";
@@ -379,7 +380,7 @@ export default function AdminPage() {
         </div>
       </aside>
       <section className="admin-main">
-        <header className="admin-topbar"><div className="breadcrumb">워크스페이스 <span>/</span> <b>{activeSectionLabel}</b></div><div className="admin-top-actions"><label className="admin-search"><Search size={15} /><input className="admin-search-input" aria-label="워크스페이스 검색" placeholder="무엇이든 검색하세요" value={query} onChange={(event) => setQuery(event.target.value)} /><kbd><Command size={10} /> K</kbd></label><button className="admin-icon" aria-label="알림" onClick={() => notify(liveOn ? "드로잉 클럽 라이브가 진행 중이에요." : "새로운 알림이 없어요.")}><Bell size={17} /><i /></button><button className="profile-picture profile-picture--small profile-trigger" aria-label="프로필 메뉴" onClick={() => setProfileMenuOpen((open) => !open)}>{user?.name.slice(0, 1) ?? "?"}</button></div></header>
+        <header className="admin-topbar"><div className="breadcrumb">워크스페이스 <span>/</span> <b>{activeSectionLabel}</b></div><div className="admin-top-actions"><LanguageSwitcher /><label className="admin-search"><Search size={15} /><input className="admin-search-input" aria-label="워크스페이스 검색" placeholder="무엇이든 검색하세요" value={query} onChange={(event) => setQuery(event.target.value)} /><kbd><Command size={10} /> K</kbd></label><button className="admin-icon" aria-label="알림" onClick={() => notify(liveOn ? "드로잉 클럽 라이브가 진행 중이에요." : "새로운 알림이 없어요.")}><Bell size={17} /><i /></button><button className="profile-picture profile-picture--small profile-trigger" aria-label="프로필 메뉴" onClick={() => setProfileMenuOpen((open) => !open)}>{user?.name.slice(0, 1) ?? "?"}</button></div></header>
         <div className="admin-content">
           <div className="admin-welcome"><div><div className="admin-date">SUNDAY, OCTOBER 11, 2026</div><h1>{activeSection === "dashboard" ? `좋은 오후예요, ${user?.name ?? "게스트"}님` : activeSectionLabel}<span> ✳</span></h1><p>{activeSection === "dashboard" ? "오늘도 새로운 배움이 피어나고 있어요." : "워크스페이스 운영에 필요한 정보를 확인하세요."}</p></div>{activeSection !== "settings" && activeSection !== "help" && <Button onClick={() => openClassModal()}><Plus size={16} /> 새 클래스 만들기</Button>}</div>
           {content}

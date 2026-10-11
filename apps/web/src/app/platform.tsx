@@ -22,6 +22,8 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AccountMenu } from "@classmate/ui/account-menu";
 import { Button } from "@classmate/ui/button";
+import { useLoginRequired } from "@classmate/ui/login-required-provider";
+import { useTranslation } from "@classmate/ui/localization";
 import { useDemoSession } from "@classmate/ui/use-demo-session";
 import type { Course } from "../features/courses/types/course";
 import { CourseCatalog } from "../features/courses/components/course-catalog";
@@ -75,6 +77,8 @@ export function Platform() {
   const [notifications, setNotifications] = useState(initialNotifications);
   const [notificationsReady, setNotificationsReady] = useState(false);
   const { user } = useDemoSession();
+  const requestLogin = useLoginRequired();
+  const { t } = useTranslation();
   const unreadNotifications = useMemo(
     () => notifications.filter((notification) => !notification.read).length,
     [notifications],
@@ -165,7 +169,7 @@ export function Platform() {
   const openCourse = (course: Course) => router.push(`/courses/${course.id}`);
   const openClassroom = () => {
     if (!user) {
-      window.alert("로그인을 해주세요.");
+      requestLogin(() => setClassroom(true));
       return;
     }
     setClassroom(true);
@@ -190,10 +194,10 @@ export function Platform() {
           classmate<span className="brand-period">.</span>
         </a>
         <nav className={`nav-links${mobileNavOpen ? " nav-links--open" : ""}`} aria-label="메인 메뉴">
-          <a className="nav-link nav-link--active" href="#classes" onClick={() => setMobileNavOpen(false)}>강의</a>
-          <a className="nav-link" href="/resources" onClick={() => setMobileNavOpen(false)}>무료 영상</a>
-          <a className="nav-link" href="#live" onClick={() => setMobileNavOpen(false)}>라이브</a>
-          <a className="nav-link" href="#teachers" onClick={() => setMobileNavOpen(false)}>크리에이터</a>
+          <a className="nav-link nav-link--active" href="#classes" onClick={() => setMobileNavOpen(false)}>{t("nav.courses")}</a>
+          <a className="nav-link" href="/resources" onClick={() => setMobileNavOpen(false)}>{t("nav.videos")}</a>
+          <a className="nav-link" href="#live" onClick={() => setMobileNavOpen(false)}>{t("nav.live")}</a>
+          <a className="nav-link" href="#teachers" onClick={() => setMobileNavOpen(false)}>{t("nav.creators")}</a>
         </nav>
         <div className="top-actions">
           <form
@@ -282,11 +286,11 @@ export function Platform() {
           transition={{ duration: 0.55 }}
         >
           <div className="hero-copy">
-            <div className="eyebrow"><span className="eyebrow-dot" /> LIVE CLASS, LIVE LIFE</div>
-            <h1>배움이 일상이 되는<br />가장 다정한 순간<span>.</span></h1>
-            <p>실무에 바로 쓰는 기술을 배우고, 같은 목표를 가진 사람들과<br className="desktop-break" /> 함께 성장하는 라이브 강의</p>
+            <div className="eyebrow"><span className="eyebrow-dot" /> {t("pages.homeEyebrow")}</div>
+            <h1>{t("pages.homeTitle")}<span>.</span></h1>
+            <p>{t("pages.homeDescription")}</p>
             <div className="hero-buttons">
-              <a className="button button--cream" href="#classes">강의 둘러보기 <ArrowRight size={16} /></a>
+              <a className="button button--cream" href="#classes">{t("actions.browse")} <ArrowRight size={16} /></a>
               <button className="hero-text-button" onClick={openClassroom}>
                 <span className="play-circle"><Play size={12} fill="currentColor" /></span>
                 라이브 강의 입장

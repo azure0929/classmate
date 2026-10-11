@@ -4,23 +4,19 @@ import { useState } from "react";
 import { AuthDialog, type AuthMode, type AuthUser } from "./auth-dialog";
 import { LogoutConfirmDialog } from "./logout-confirm-dialog";
 import { useDemoSession } from "./use-demo-session";
+import { LanguageSwitcher, useTranslation } from "./localization";
 
 interface AccountMenuProps {
   onAuthenticated?: (user: AuthUser) => void;
   onLoggedOut?: () => void;
 }
 
-const roleLabels = {
-  learner: "학습자",
-  instructor: "강사",
-  admin: "관리자",
-} as const;
-
 export function AccountMenu({
   onAuthenticated,
   onLoggedOut,
 }: AccountMenuProps) {
   const { user, ready, login, logout } = useDemoSession();
+  const { t } = useTranslation();
   const [profileOpen, setProfileOpen] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [showAuth, setShowAuth] = useState(false);
@@ -47,9 +43,10 @@ export function AccountMenu({
 
   return (
     <>
+      <LanguageSwitcher />
       <div className="profile-control">
         {!ready ? (
-          <button className="avatar" type="button" disabled aria-label="계정 확인 중">
+          <button className="avatar" type="button" disabled aria-label={t("account.checking")}>
             …
           </button>
         ) : user ? (
@@ -57,7 +54,7 @@ export function AccountMenu({
             <button
               className="avatar"
               type="button"
-              aria-label="내 프로필 메뉴"
+              aria-label={t("account.profile")}
               aria-expanded={profileOpen}
               onClick={() => setProfileOpen((open) => !open)}
             >
@@ -66,18 +63,18 @@ export function AccountMenu({
             {profileOpen && (
               <div className="profile-dropdown">
                 <strong>{user.name}</strong>
-                <small>{roleLabels[user.role]}</small>
+                <small>{t(`auth.role${user.role[0].toUpperCase()}${user.role.slice(1)}`)}</small>
                 <small>{user.email}</small>
                 <button type="button" onClick={() => setConfirmLogout(true)}>
-                  로그아웃
+                  {t("account.logout")}
                 </button>
               </div>
             )}
           </>
         ) : (
           <div className="account-auth-actions">
-            <button type="button" onClick={() => openAuth("login")}>로그인</button>
-            <button type="button" onClick={() => openAuth("signup")}>회원가입</button>
+            <button type="button" onClick={() => openAuth("login")}>{t("actions.login")}</button>
+            <button type="button" onClick={() => openAuth("signup")}>{t("actions.signup")}</button>
           </div>
         )}
       </div>

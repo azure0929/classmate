@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import "@mantine/core/styles.css";
+import { DesignSystemProvider } from "@classmate/ui/design-system";
+import { LocalizationProvider } from "@classmate/ui/localization";
 import { DemoSessionProvider } from "@classmate/ui/use-demo-session";
 import "./globals.css";
 
@@ -13,7 +16,11 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        <DemoSessionProvider>{children}</DemoSessionProvider>
+        <DesignSystemProvider>
+          <DemoSessionProvider>
+            <LocalizationProvider>{children}</LocalizationProvider>
+          </DemoSessionProvider>
+        </DesignSystemProvider>
       </body>
     </html>
   );

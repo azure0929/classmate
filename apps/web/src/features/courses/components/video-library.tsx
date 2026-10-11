@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { AccountMenu } from "@classmate/ui/account-menu";
+import { useTranslation } from "@classmate/ui/localization";
 import {
   curatedVideos,
   learningCategories,
@@ -10,6 +11,7 @@ import {
 } from "../data/curated-videos";
 
 export function VideoLibrary() {
+  const { t } = useTranslation();
   const [category, setCategory] = useState<LearningCategory | "전체">("전체");
   const videos =
     category === "전체"
@@ -32,14 +34,23 @@ export function VideoLibrary() {
       </header>
 
       <section className="video-library-content">
-        <div className="section-kicker">OPEN LEARNING LIBRARY</div>
-        <h1>좋은 공개 영상으로 시작하는 배움<span>.</span></h1>
+        <div className="section-kicker">{t("library.eyebrow")}</div>
+        <h1>{t("library.title")}<span>.</span></h1>
         <p className="video-library-intro">
-          개발자가 직접 고른 크리에이터의 공개 영상을 공식 YouTube 임베드로 연결합니다.
-          영상은 원본 채널에서 재생되며, 언제든 원본을 방문할 수 있어요.
+          {t("library.description")}
         </p>
         <div className="video-library-filters" role="group" aria-label="영상 분야">
-          {(["전체", ...learningCategories] as const).map((item) => (
+          {(["전체", ...learningCategories] as const).map((item) => {
+            const categoryKey: Record<LearningCategory | "전체", string> = {
+              전체: "all",
+              개발: "development",
+              디자인: "design",
+              "데이터 사이언스": "data",
+              "업무 생산성": "productivity",
+              "AI 기술": "ai",
+              커리어: "career",
+            };
+            return (
             <button
               key={item}
               type="button"
@@ -47,12 +58,13 @@ export function VideoLibrary() {
               className={category === item ? "video-library-filter--active" : ""}
               onClick={() => setCategory(item)}
             >
-              {item}
+              {t(`categories.${categoryKey[item]}`)}
             </button>
-          ))}
+            );
+          })}
         </div>
         <p className="video-library-count" aria-live="polite">
-          {videos.length}개의 공개 영상
+          {t("library.count", { count: videos.length })}
         </p>
         <div className="video-library-grid">
           {videos.map((video) => (
@@ -68,13 +80,20 @@ export function VideoLibrary() {
                 />
               </div>
               <div className="public-video-copy">
-                <span>{video.category}</span>
+                <span>{t(`categories.${{
+                  개발: "development",
+                  디자인: "design",
+                  "데이터 사이언스": "data",
+                  "업무 생산성": "productivity",
+                  "AI 기술": "ai",
+                  커리어: "career",
+                }[video.category]}`)}</span>
                 <h2>{video.title}</h2>
                 <p>{video.summary}</p>
                 <div>
                   <strong>{video.creator}</strong>
                   <a href={video.channelUrl} target="_blank" rel="noreferrer">
-                    채널 방문
+                    {t("library.channel")}
                   </a>
                 </div>
               </div>
@@ -82,8 +101,7 @@ export function VideoLibrary() {
           ))}
         </div>
         <p className="video-library-disclaimer">
-          영상 제목과 재생 권한은 각 크리에이터가 관리합니다. 재생이 제한된 영상은
-          채널에서 확인해 주세요.
+          Public YouTube embeds remain under their original creators&apos; control. If a video is unavailable, visit its source channel.
         </p>
       </section>
       <footer className="footer video-library-footer">

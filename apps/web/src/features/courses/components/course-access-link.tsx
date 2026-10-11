@@ -1,10 +1,9 @@
 "use client";
 
 import type { MouseEvent, ReactNode } from "react";
-import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AuthDialog } from "@classmate/ui/auth-dialog";
+import { useLoginRequired } from "@classmate/ui/login-required-provider";
 import { useDemoSession } from "@classmate/ui/use-demo-session";
 
 interface CourseAccessLinkProps {
@@ -21,15 +20,14 @@ export function CourseAccessLink({
   children,
 }: CourseAccessLinkProps) {
   const router = useRouter();
-  const { user, ready, login } = useDemoSession();
-  const [showAuth, setShowAuth] = useState(false);
+  const { user, ready } = useDemoSession();
+  const requestLogin = useLoginRequired();
 
   const openCourse = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     if (!ready) return;
     if (!user) {
-      window.alert("로그인을 해주세요.");
-      setShowAuth(true);
+      requestLogin(() => router.push(href));
       return;
     }
     router.push(href);
@@ -45,17 +43,6 @@ export function CourseAccessLink({
       >
         {children}
       </Link>
-      {showAuth && (
-        <AuthDialog
-          initialMode="login"
-          onAuthenticated={(nextUser) => {
-            login(nextUser);
-            setShowAuth(false);
-            router.push(href);
-          }}
-          onClose={() => setShowAuth(false)}
-        />
-      )}
     </>
   );
 }
