@@ -11,7 +11,8 @@
     "./use-demo-session": "./src/use-demo-session.ts",
     "./design-system": "./src/design-system.tsx",
     "./localization": "./src/localization.tsx",
-    "./login-required-provider": "./src/login-required-provider.tsx"
+    "./login-required-provider": "./src/login-required-provider.tsx",
+    "./scroll-to-top-button": "./src/scroll-to-top-button.tsx"
   },
   "scripts": {
     "lint": "tsc --noEmit",
@@ -23,6 +24,7 @@
     "@mantine/hooks": "^8.3.18",
     "i18next": "^26.4.3",
     "i18next-locize-backend": "^10.0.3",
+    "lucide-react": "^0.468.0",
     "react-i18next": "^17.0.16"
   },
   "peerDependencies": {

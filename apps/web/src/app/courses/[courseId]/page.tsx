@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { CourseDetailPage } from "../../../features/courses/components/course-detail-page";
+import { getCourses } from "../../../features/courses/api/get-courses";
 import {
-  curatedCourses,
   curatedVideos,
 } from "../../../features/courses/data/curated-videos";
 import {
@@ -15,9 +15,12 @@ interface CoursePageProps {
   searchParams: Promise<{ video?: string | string[] }>;
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function CoursePage({ params, searchParams }: CoursePageProps) {
   const [{ courseId }, query] = await Promise.all([params, searchParams]);
-  const course = curatedCourses.find((item) => item.id === courseId);
+  const courses = await getCourses();
+  const course = courses.find((item) => item.id === courseId);
 
   if (!course) notFound();
 

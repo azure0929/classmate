@@ -120,3 +120,7 @@
 .help-contact{border:1px solid #e6eae3;border-radius:4px;padding:9px}
 @media(max-width:760px){.workspace-menu{left:57px;top:85px}.profile-menu{left:57px;bottom:60px}.creator-grid{grid-template-columns:1fr}.live-layout{grid-template-columns:1fr}.studio-stage{min-height:190px}.insight-grid{grid-template-columns:1fr}.calendar-cell{min-height:55px;padding:4px}.calendar-cell small{font-size:14px;padding:3px}}
 @media(max-width:500px){.section-intro{align-items:flex-start;gap:10px}.section-intro .button{font-size:14px;padding:0 8px}.creator-card{grid-template-columns:35px 1fr auto;padding:12px}.creator-avatar{width:35px;height:35px}.calendar-panel{padding:9px}.calendar-cell{min-height:44px;padding:3px}.calendar-cell small{display:none}.settings-footer,.danger-zone{align-items:flex-start;gap:12px;flex-direction:column}.auth-dialog,.class-editor{padding:22px}.studio-controls .button{font-size:14px;padding:0 8px}}
+.scroll-to-top{position:fixed;right:24px;bottom:24px;z-index:45;width:48px;height:48px;display:grid;place-items:center;border:1px solid #e8ebe6;border-radius:50%;background:#fff;color:#202522;box-shadow:0 5px 18px #17231f20;transition:box-shadow .18s,color .18s}
+.scroll-to-top:hover{color:var(--green);box-shadow:0 9px 24px #17231f2a}
+.scroll-to-top:focus-visible{outline:3px solid #8eaa95;outline-offset:3px}
+@media(max-width:600px){.scroll-to-top{right:16px;bottom:18px;width:44px;height:44px}}

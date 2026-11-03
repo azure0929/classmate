@@ -21,6 +21,7 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import { useDemoSession } from "@classmate/ui/use-demo-session";
 import type { RtcSignal } from "@classmate/realtime-types";
 import { ChatComposer } from "./chat-composer";
 import { ChatFeed } from "./chat-feed";
@@ -30,15 +31,18 @@ import {
 } from "../hooks/use-live-chat";
 import { useUserMedia } from "../hooks/use-user-media";
 
-const roomId = "drawing-club-live";
 const signalingUrl =
   process.env.NEXT_PUBLIC_REALTIME_URL ?? "http://localhost:4001";
 
 interface ClassroomProps {
   onClose: () => void;
+  roomId: string;
+  courseTitle: string;
+  teacher: string;
 }
 
-export function Classroom({ onClose }: ClassroomProps) {
+export function Classroom({ onClose, roomId, courseTitle, teacher }: ClassroomProps) {
+  const { user } = useDemoSession();
   const [socket, setSocket] = useState<RealtimeSocket | null>(null);
   const [peerIds, setPeerIds] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<"chat" | "people">("chat");
@@ -59,6 +63,7 @@ export function Classroom({ onClose }: ClassroomProps) {
   } = useLiveChat(
     socket,
     roomId,
+    user?.name ?? "학습자",
   );
   const reportError = useCallback((message: string) => setNotice(message), []);
   const emitSignal = useCallback(
@@ -214,21 +219,21 @@ export function Classroom({ onClose }: ClassroomProps) {
     <motion.div className="room-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <header className="room-header">
         <button className="room-back" onClick={onClose}><ArrowLeft size={18} /> <span>클래스 나가기</span></button>
-        <div className="room-title"><span className="room-live-dot" /><span><b>라이브 클래스</b><small>좋아하는 장면을 그리는 아이패드 드로잉</small></span></div>
+        <div className="room-title"><span className="room-live-dot" /><span><b>라이브 클래스</b><small>{courseTitle}</small></span></div>
         <div className="room-status"><span className={connected ? "status-connected" : ""}><Signal size={15} /> {connected ? "연결됨" : "연결 중"}</span><i /><span><Users size={15} /> {participantCount}명</span><button aria-label="더 보기"><MoreHorizontal size={20} /></button></div>
       </header>
       <div className="room-body">
         <section className="stage-column">
           <div className="video-stage">
             <div className="stage-teacher">
-              <div className="teacher-avatar">하나</div>
-              <div><b>김하나</b><span>오늘의 작은 그림을 함께 그려요</span></div>
+              <div className="teacher-avatar">{teacher.slice(0, 1)}</div>
+              <div><b>{teacher}</b><span>{courseTitle}</span></div>
             </div>
             <div className={`teacher-video-placeholder ${cameraOn ? "teacher-video-placeholder--local" : ""}`}>
               <video ref={localVideoRef} autoPlay muted playsInline className={cameraOn || sharing ? "local-preview" : "local-preview local-preview--hidden"} />
               {!cameraOn && !sharing && <div className="stage-art"><div className="stage-art-sun" /><div className="stage-art-hill" /><span>오늘의 장면을<br />천천히 그려봐요</span></div>}
               <button className="stage-expand" aria-label="화면 크게 보기" onClick={() => document.querySelector(".video-stage")?.requestFullscreen()}><Maximize2 size={17} /></button>
-              <div className="stage-caption"><span className="room-live-dot" /> {sharing ? "화면 공유 중" : "김하나 선생님"} <span className="stage-caption-mic"><Mic size={13} /></span></div>
+              <div className="stage-caption"><span className="room-live-dot" /> {sharing ? "화면 공유 중" : `${teacher} 선생님`} <span className="stage-caption-mic"><Mic size={13} /></span></div>
               {peerIds.map((peerId, index) => (
                 <video
                   key={peerId}
@@ -263,7 +268,7 @@ export function Classroom({ onClose }: ClassroomProps) {
               onDelete={deleteMessage}
             />
             <ChatComposer connected={connected} onSend={sendMessage} />
-          </> : <div className="people-list"><div className="people-count"><b>함께 배우는 사람들</b><span>{participantCount}명</span></div><div className="person-row"><span className="chat-avatar person-avatar--teacher">하</span><span><b>김하나</b><small>강사 · 진행 중</small></span><Check size={15} /></div><div className="person-row"><span className="chat-avatar">지</span><span><b>지민</b><small>나</small></span><MicOff size={15} /></div><p className="people-hint">서로의 배움에 따뜻한 응원을 보내주세요 💛</p></div>}
+          </> : <div className="people-list"><div className="people-count"><b>함께 배우는 사람들</b><span>{participantCount}명</span></div><div className="person-row"><span className="chat-avatar person-avatar--teacher">{teacher.slice(0, 1)}</span><span><b>{teacher}</b><small>강사 · 진행 중</small></span><Check size={15} /></div><div className="person-row"><span className="chat-avatar">{user?.name.slice(0, 1) ?? "학"}</span><span><b>{user?.name ?? "학습자"}</b><small>나</small></span><MicOff size={15} /></div><p className="people-hint">서로의 배움에 따뜻한 응원을 보내주세요 💛</p></div>}
         </aside>
       </div>
       <AnimatePresence>{notice && <motion.div className="room-notice" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>{notice}<button onClick={() => setNotice("")}><X size={14} /></button></motion.div>}</AnimatePresence>

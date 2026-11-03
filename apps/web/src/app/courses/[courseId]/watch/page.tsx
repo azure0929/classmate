@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { CourseWatchPage } from "../../../../features/courses/components/course-watch-page";
+import { getCourses } from "../../../../features/courses/api/get-courses";
 import {
-  curatedCourses,
   curatedVideos,
 } from "../../../../features/courses/data/curated-videos";
 import { getVideoCourseLessonMatch } from "../../../../features/courses/data/course-video-matches";
@@ -12,12 +12,15 @@ interface CourseWatchRouteProps {
   searchParams: Promise<{ video?: string | string[]; lesson?: string | string[] }>;
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function CourseWatchRoute({
   params,
   searchParams,
 }: CourseWatchRouteProps) {
   const [{ courseId }, query] = await Promise.all([params, searchParams]);
-  const course = curatedCourses.find((item) => item.id === courseId);
+  const courses = await getCourses();
+  const course = courses.find((item) => item.id === courseId);
 
   if (!course) notFound();
 
