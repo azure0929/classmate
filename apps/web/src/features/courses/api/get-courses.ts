@@ -8,6 +8,7 @@ export async function getCourses() {
     .order("sort_order", { ascending: true });
 
   if (error) {
+    // eslint-disable-next-line no-console
     console.error("Failed to load courses from Supabase", error.message);
     throw new Error(`Could not load courses: ${error.message}`);
   }
