@@ -77,7 +77,6 @@ npm run dev
 
 ### 환경 설정
 
-<<<<<<< HEAD
 ```text
 apps/
   admin/             강사 및 관리자 대시보드 (Next.js)
@@ -86,11 +85,9 @@ apps/
 packages/
   realtime-types/    실시간 클라이언트/서버 공유 이벤트 타입
   ui/                Mantine 디자인 시스템, 다국어, 공통 UI와 Supabase Auth 세션
-=======
 
 선택적으로 `NEXT_PUBLIC_LOCIZE_PROJECT_ID`와 `NEXT_PUBLIC_LOCIZE_VERSION`을 설정해 원격 번역을 사용할 수 있습니다. 설정하지 않으면 패키지에 포함된 한국어·영어·일본어·베트남어 번역을 사용합니다. 변수 예시는 [.env.example](./.env.example)을 참고하세요. 모든 seed 테이블은 RLS를 활성화하고 공개 읽기만 허용하며 브라우저 쓰기는 차단합니다. 관리자 데모의 변경 내용은 현재 페이지 상태에만 반영되고 실제 DB 변경은 하지 않습니다. 마이그레이션을 적용하지 않았거나 DB 연결에 실패하면 샘플 데이터를 대신 표시하지 않고 오류 상태를 안내합니다.
 
-<<<<<<< HEAD
 ```text
 app/                         App Router 경로, 레이아웃, Provider
 features/
