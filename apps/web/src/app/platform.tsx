@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { AccountMenu } from "@classmate/ui/account-menu";
 import { Button } from "@classmate/ui/button";
@@ -26,54 +27,25 @@ import { useLoginRequired } from "@classmate/ui/login-required-provider";
 import { useTranslation } from "@classmate/ui/localization";
 import { useDemoSession } from "@classmate/ui/use-demo-session";
 import type { Course } from "../features/courses/types/course";
+import { getCourses } from "../features/courses/api/get-courses";
+import { courseCategories } from "../features/courses/types/course-category";
+import {
+  getPlatformNotifications,
+  type PlatformNotification,
+} from "../features/notifications/api/get-platform-notifications";
 import { CourseCatalog } from "../features/courses/components/course-catalog";
 import { CourseCatalogFallback } from "../features/courses/components/course-catalog-fallback";
+import {
+  getActiveLiveClass,
+  type ActiveLiveClass,
+} from "../features/live-classroom/api/get-active-live-class";
 import { Classroom } from "../features/live-classroom/components/classroom";
-import { curatedVideos, learningCategories } from "../features/courses/data/curated-videos";
 
 // ==========================================
 // 1. 타입 정의 및 초기 데이터 설정
 // ==========================================
 
-// 플랫폼 알림 항목의 데이터 구조를 정의합니다.
-interface PlatformNotification {
-  id: string;
-  title: string;
-  description: string;
-  time: string;
-  href: string;
-  read: boolean;
-}
-
-// 알림 패널에 표시될 초기 더미 데이터입니다.
-const initialNotifications: PlatformNotification[] = [
-  {
-    id: "live-class-tonight",
-    title: "오늘의 라이브 클래스",
-    description: "드로잉 클럽 라이브가 오늘 오후 8시에 시작해요.",
-    time: "오늘",
-    href: "#live",
-    read: false,
-  },
-  {
-    id: "new-course-recommendation",
-    title: "새로운 강의를 만나보세요",
-    description: "관심 분야의 실무 강의가 새로 등록되었어요.",
-    time: "어제",
-    href: "/classes",
-    read: false,
-  },
-  {
-    id: "learning-tip",
-    title: "이번 주 학습 팁",
-    description: "배운 내용을 작은 프로젝트로 직접 완성해 보세요.",
-    time: "10월 8일",
-    href: "/classes",
-    read: false,
-  },
-];
-
-// 로컬 스토리지에 알림 상태를 저장하기 위한 키값입니다.
+// 로컬 저장소에는 사용자별 읽음 상태만 보관합니다.
 const notificationStorageKey = "classmate-notifications";
 
 
@@ -88,13 +60,19 @@ export function Platform() {
   const [classroom, setClassroom] = useState(false);             // 라이브 클래스룸 모달 오픈 여부
   const [mobileNavOpen, setMobileNavOpen] = useState(false);     // 모바일 네비게이션 메뉴 오픈 여부
   const [notificationsOpen, setNotificationsOpen] = useState(false); // 알림 패널 오픈 여부
-  const [notifications, setNotifications] = useState(initialNotifications); // 알림 목록 상태
+  const [notifications, setNotifications] = useState<PlatformNotification[]>([]); // 알림 목록 상태
   const [notificationsReady, setNotificationsReady] = useState(false);      // 로컬 스토리지 동기화 준비 상태
+  const [activeLiveClass, setActiveLiveClass] = useState<ActiveLiveClass | null>(null);
+  const [activeLiveClassLoaded, setActiveLiveClassLoaded] = useState(false);
 
   // --- [외부 훅(Hooks) 사용] ---
   const { user } = useDemoSession();       // 현재 로그인된 유저 세션 정보
   const requestLogin = useLoginRequired(); // 로그인 모달을 띄워주는 트리거 함수
   const { t } = useTranslation();          // 다국어 번역 함수
+  const { data: courses = [] } = useQuery({
+    queryKey: ["courses"],
+    queryFn: getCourses,
+  });
 
   // --- [메모이제이션: 읽지 않은 알림 개수 계산] ---
   const unreadNotifications = useMemo(
@@ -102,43 +80,70 @@ export function Platform() {
     [notifications],
   );
 
-  // --- [Effect: 컴포넌트 마운트 시 로컬 스토리지에서 알림 기록 불러오기] ---
   useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(notificationStorageKey);
-      if (stored) {
-        const parsed: unknown = JSON.parse(stored);
-        // 파싱된 데이터가 올바른 배열 및 인터페이스 형식을 만족하는지 타입 가드로 검증
-        if (
-          Array.isArray(parsed) &&
-          parsed.every(
-            (item) =>
-              typeof item === "object" &&
-              item !== null &&
-              "id" in item &&
-              typeof item.id === "string" &&
-              "title" in item &&
-              typeof item.title === "string" &&
-              "description" in item &&
-              typeof item.description === "string" &&
-              "time" in item &&
-              typeof item.time === "string" &&
-              "href" in item &&
-              typeof item.href === "string" &&
-              "read" in item &&
-              typeof item.read === "boolean",
-          )
-        ) {
-          setNotifications(parsed);
-        } else {
-          console.warn("Stored notifications have an invalid format");
+    let cancelled = false;
+    void getActiveLiveClass()
+      .then((liveClass) => {
+        if (!cancelled) setActiveLiveClass(liveClass);
+      })
+      .catch((error) => {
+        console.error("Could not load active live class", error);
+      })
+      .finally(() => {
+        if (!cancelled) setActiveLiveClassLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // --- [Effect: Supabase 알림과 로컬 읽음 상태 불러오기] ---
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadNotifications = async () => {
+      try {
+        const readIds = new Set<string>();
+        const stored = window.localStorage.getItem(notificationStorageKey);
+        if (stored) {
+          const parsed: unknown = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            for (const item of parsed) {
+              if (typeof item === "string") {
+                readIds.add(item);
+              } else if (
+                typeof item === "object" &&
+                item !== null &&
+                "id" in item &&
+                typeof item.id === "string" &&
+                "read" in item &&
+                item.read === true
+              ) {
+                readIds.add(item.id);
+              }
+            }
+          }
         }
+        const remoteNotifications = await getPlatformNotifications();
+        if (cancelled) return;
+        setNotifications(
+          remoteNotifications.map((notification) => ({
+            ...notification,
+            read: readIds.has(notification.id),
+          })),
+        );
+      } catch (error) {
+        console.error("Could not load notifications", error);
+        if (!cancelled) setNotifications([]);
+      } finally {
+        if (!cancelled) setNotificationsReady(true);
       }
-    } catch (error) {
-      console.error("Could not load notifications", error);
-    } finally {
-      setNotificationsReady(true);
-    }
+    };
+
+    void loadNotifications();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // --- [Effect: 알림 상태가 바뀔 때마다 로컬 스토리지에 자동 저장] ---
@@ -147,7 +152,9 @@ export function Platform() {
     try {
       window.localStorage.setItem(
         notificationStorageKey,
-        JSON.stringify(notifications),
+        JSON.stringify(
+          notifications.filter((notification) => notification.read).map((notification) => notification.id),
+        ),
       );
     } catch (error) {
       console.error("Could not save notifications", error);
@@ -164,14 +171,6 @@ export function Platform() {
           : notification,
     );
     setNotifications(nextNotifications);
-    try {
-      window.localStorage.setItem(
-        notificationStorageKey,
-        JSON.stringify(nextNotifications),
-      );
-    } catch (error) {
-      console.error("Could not save notifications", error);
-    }
   };
 
   // 모든 알림을 일괄 '읽음'으로 처리하는 함수
@@ -181,14 +180,6 @@ export function Platform() {
       read: true,
     }));
     setNotifications(nextNotifications);
-    try {
-      window.localStorage.setItem(
-        notificationStorageKey,
-        JSON.stringify(nextNotifications),
-      );
-    } catch (error) {
-      console.error("Could not save notifications", error);
-    }
   };
 
   // 특정 강의 상세 페이지로 이동
@@ -196,6 +187,7 @@ export function Platform() {
 
   // 라이브 클래스룸 열기 (비로그인 상태라면 로그인 유도 후 오픈)
   const openClassroom = () => {
+    if (!activeLiveClass) return;
     if (!user) {
       requestLogin(() => setClassroom(true));
       return;
@@ -314,9 +306,9 @@ export function Platform() {
                   >
                     <span className="notification-item-indicator" aria-hidden="true" />
                     <span className="notification-item-copy">
-                      <strong>{t(`notifications.${notification.id}.title`)}</strong>
-                      <span>{t(`notifications.${notification.id}.description`)}</span>
-                      <small>{t(`notifications.${notification.id}.time`)}</small>
+                      <strong>{notification.title}</strong>
+                      <span>{notification.description}</span>
+                      <small>{notification.time}</small>
                     </span>
                     <ChevronRight size={15} />
                   </a>
@@ -357,7 +349,7 @@ export function Platform() {
             </div>
             <div className="hero-social">
               <div className="avatar-stack"><Play size={15} /></div>
-              <span><strong>{t("pages.curatedVideoCourseCount", { count: curatedVideos.length })}</strong></span>
+              <span><strong>{t("pages.curatedVideoCourseCount", { count: courses.length })}</strong></span>
             </div>
           </div>
 
@@ -365,7 +357,7 @@ export function Platform() {
           <div className="hero-art">
             <div className="hero-image" />
             <div className="hero-note"><span className="note-spark">✳</span><span>{t("pages.inspiration")}<br /><b>{t("pages.inspirationText")}</b></span></div>
-            <div className="live-float"><span className="live-pulse" /> {t("pages.liveDemoTime")} <ArrowDownRight size={16} /></div>
+            <div className="live-float"><span className="live-pulse" /> {activeLiveClass?.dateLabel ?? "일정 없음"} <ArrowDownRight size={16} /></div>
             <div className="hero-stamp">{t("pages.learnTogetherStamp")}<br /><span>✳</span></div>
           </div>
           <div className="hero-index"><span>01</span><i /><span>03</span></div>
@@ -385,9 +377,9 @@ export function Platform() {
       <section className="creator-section" id="teachers">
         <div><div className="section-kicker">{t("pages.creatorEyebrow")}</div><h2>{t("pages.creatorTitle")}<span>.</span></h2><p>{t("pages.creatorDescription")}</p></div>
         <div className="creator-tiles">
-          {learningCategories.map((category) => {
-            const video = curatedVideos.find((item) => item.category === category);
-            if (!video) return null;
+          {courseCategories.map(({ name: category }) => {
+            const course = courses.find((item) => item.category === category);
+            if (!course) return null;
             const categoryKeys: Record<typeof category, string> = {
               개발: "development",
               디자인: "design",
@@ -398,9 +390,9 @@ export function Platform() {
             };
             return (
               <article key={category}>
-                <span>{video.creator.slice(0, 1)}</span>
-                <div><b>{video.creator}</b><small>{t(`categories.${categoryKeys[category]}`)} · {video.title}</small></div>
-                <a href={`/courses/video-${video.id}`} aria-label={`${video.creator} ${t("pages.openCreatorCourse")}`}>
+                <span>{course.teacher.slice(0, 1)}</span>
+                <div><b>{course.teacher}</b><small>{t(`categories.${categoryKeys[category]}`)} · {course.title}</small></div>
+                <a href={`/courses/${course.id}`} aria-label={`${course.teacher} ${t("pages.openCreatorCourse")}`}>
                   {t("pages.openCreatorCourse")} <ArrowRight size={13} />
                 </a>
               </article>
@@ -414,9 +406,9 @@ export function Platform() {
           ========================================== */}
       <section className="live-banner">
         <div className="live-banner-icon"><Video size={24} /></div>
-        <div><div className="section-kicker">{t("pages.liveSeatEyebrow")}</div><h3>{t("pages.liveBannerTitle")}</h3><p>{t("pages.liveBannerDescription")}</p></div>
-        <Button onClick={openClassroom}>{t("pages.joinLive")} <ArrowRight size={15} /></Button>
-        <span className="live-banner-time"><Clock3 size={14} /> {t("pages.liveDemoTime")}</span>
+        <div><div className="section-kicker">{t("pages.liveSeatEyebrow")}</div><h3>{activeLiveClass?.title ?? "진행 중인 라이브 클래스가 없습니다."}</h3><p>{activeLiveClass ? `${activeLiveClass.teacher} 크리에이터 진행 중` : "관리자 워크스페이스에서 라이브 일정을 확인해 주세요."}</p></div>
+        <Button onClick={openClassroom} disabled={!activeLiveClassLoaded || !activeLiveClass}>{t("pages.joinLive")} <ArrowRight size={15} /></Button>
+        <span className="live-banner-time"><Clock3 size={14} /> {activeLiveClass?.dateLabel ?? "일정 없음"}</span>
       </section>
 
       {/* ==========================================
@@ -434,7 +426,7 @@ export function Platform() {
           ========================================== */}
       {/* 실시간 라이브 강의실 모달 (애니메이션 효과 적용) */}
       <AnimatePresence>
-        {classroom && <Classroom onClose={() => setClassroom(false)} />}
+        {classroom && activeLiveClass && <Classroom onClose={() => setClassroom(false)} roomId={`class-${activeLiveClass.id}`} courseTitle={activeLiveClass.title} teacher={activeLiveClass.teacher} />}
       </AnimatePresence>
       
       {/* 모바일 화면용 메뉴 토글 버튼 */}

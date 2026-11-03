@@ -6,6 +6,7 @@ import type {
   ChatMessage,
   ClientToServerEvents,
   CourseQuestion,
+  RtcSignal,
   ServerToClientEvents,
 } from "@classmate/realtime-types";
 
@@ -23,13 +24,51 @@ const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
 const messageHistory = new Map<string, ChatMessage[]>();
 const courseQuestions = new Map<string, CourseQuestion[]>();
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isRtcSignal(value: unknown): value is RtcSignal {
+  if (!isRecord(value)) return false;
+  const { roomId, to, description, candidate } = value;
+  if (
+    typeof roomId !== "string" ||
+    !roomId.trim() ||
+    roomId.length > 100 ||
+    typeof to !== "string" ||
+    !to.trim() ||
+    to.length > 100
+  ) {
+    return false;
+  }
+  if (
+    description !== undefined &&
+    (!isRecord(description) ||
+      typeof description.type !== "string" ||
+      !["offer", "answer", "pranswer", "rollback"].includes(description.type) ||
+      (description.sdp !== undefined &&
+        (typeof description.sdp !== "string" || description.sdp.length > 100_000)) )
+  ) {
+    return false;
+  }
+  if (
+    candidate !== undefined &&
+    (!isRecord(candidate) ||
+      typeof candidate.candidate !== "string" ||
+      candidate.candidate.length > 4096)
+  ) {
+    return false;
+  }
+  return true;
+}
+
 function courseQaRoom(courseId: string) {
   return `course-qa:${courseId}`;
 }
 
 io.on("connection", (socket) => {
   socket.on("room:join", (roomId) => {
-    if (!roomId.trim() || roomId.length > 100) return;
+    if (typeof roomId !== "string" || !roomId.trim() || roomId.length > 100) return;
     const peers = [...(io.sockets.adapter.rooms.get(roomId) ?? [])].filter(
       (peerId) => peerId !== socket.id,
     );
@@ -56,7 +95,9 @@ io.on("connection", (socket) => {
     socket.emit("qa:history", courseQuestions.get(courseId) ?? []);
   });
 
-  socket.on("qa:ask", ({ courseId, author, text }) => {
+  socket.on("qa:ask", (payload) => {
+    if (!isRecord(payload)) return;
+    const { courseId, author, text } = payload;
     if (
       typeof courseId !== "string" ||
       typeof author !== "string" ||
@@ -90,7 +131,9 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("qa:new", question);
   });
 
-  socket.on("qa:edit", ({ courseId, questionId, text }) => {
+  socket.on("qa:edit", (payload) => {
+    if (!isRecord(payload)) return;
+    const { courseId, questionId, text } = payload;
     if (
       typeof courseId !== "string" ||
       typeof questionId !== "string" ||
@@ -118,7 +161,9 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("qa:updated", question);
   });
 
-  socket.on("qa:delete", ({ courseId, questionId }) => {
+  socket.on("qa:delete", (payload) => {
+    if (!isRecord(payload)) return;
+    const { courseId, questionId } = payload;
     if (typeof courseId !== "string" || typeof questionId !== "string") return;
     const roomId = courseQaRoom(courseId);
     const history = courseQuestions.get(courseId);
@@ -138,7 +183,16 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("qa:deleted", { courseId, questionId });
   });
 
-  socket.on("chat:send", ({ roomId, author, text }) => {
+  socket.on("chat:send", (payload) => {
+    if (!isRecord(payload)) return;
+    const { roomId, author, text } = payload;
+    if (
+      typeof roomId !== "string" ||
+      typeof author !== "string" ||
+      typeof text !== "string"
+    ) {
+      return;
+    }
     const messageText = text.trim();
     if (!socket.rooms.has(roomId) || !messageText || messageText.length > 2000) {
       return;
@@ -158,7 +212,9 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("chat:new", message);
   });
 
-  socket.on("chat:edit", ({ roomId, messageId, text }) => {
+  socket.on("chat:edit", (payload) => {
+    if (!isRecord(payload)) return;
+    const { roomId, messageId, text } = payload;
     if (
       typeof roomId !== "string" ||
       typeof messageId !== "string" ||
@@ -184,7 +240,9 @@ io.on("connection", (socket) => {
     io.to(roomId).emit("chat:updated", message);
   });
 
-  socket.on("chat:delete", ({ roomId, messageId }) => {
+  socket.on("chat:delete", (payload) => {
+    if (!isRecord(payload)) return;
+    const { roomId, messageId } = payload;
     if (typeof roomId !== "string" || typeof messageId !== "string") return;
     const history = messageHistory.get(roomId);
     const messageIndex = history?.findIndex((item) => item.id === messageId) ?? -1;
@@ -205,6 +263,7 @@ io.on("connection", (socket) => {
 
   socket.on("rtc:signal", (signal) => {
     if (
+      !isRtcSignal(signal) ||
       !socket.rooms.has(signal.roomId) ||
       !signal.to ||
       signal.to === socket.id ||

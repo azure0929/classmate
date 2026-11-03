@@ -26,20 +26,17 @@ import { Button } from "@classmate/ui/button";
 import { LogoutConfirmDialog } from "@classmate/ui/logout-confirm-dialog";
 import { LanguageSwitcher } from "@classmate/ui/localization";
 import { useDemoSession } from "@classmate/ui/use-demo-session";
+import {
+  getWorkspaceData,
+  type WorkspaceClass,
+  type WorkspaceCreator,
+  type WorkspaceFaq,
+  type WorkspaceMetrics,
+} from "../lib/workspace-data";
 
 type SectionId = "dashboard" | "classes" | "creators" | "calendar" | "live" | "settings" | "help";
-type ClassStatus = "진행 중" | "모집 중" | "마감 임박" | "임시 저장";
-
-interface ClassItem {
-  id: string;
-  title: string;
-  teacher: string;
-  category: string;
-  students: number;
-  status: ClassStatus;
-  date: string;
-  color: string;
-}
+type ClassStatus = WorkspaceClass["status"];
+type ClassItem = WorkspaceClass;
 
 const sections: { id: SectionId; label: string }[] = [
   { id: "dashboard", label: "대시보드" },
@@ -52,23 +49,6 @@ const sections: { id: SectionId; label: string }[] = [
 ];
 const tabs = ["전체 클래스", "진행 중", "모집 중", "임시 저장"] as const;
 type ClassTab = (typeof tabs)[number];
-
-const initialClasses: ClassItem[] = [
-  { id: "drawing", title: "아이패드 드로잉, 좋아하는 장면을 그려요", teacher: "김하나", category: "드로잉", students: 124, status: "진행 중", date: "오늘 오후 8:00", color: "mint" },
-  { id: "photo", title: "스마트폰으로 담는 나만의 시선", teacher: "이도현", category: "사진", students: 86, status: "모집 중", date: "10월 14일 오후 7:30", color: "peach" },
-  { id: "ceramic", title: "하루 한 잔, 작은 도자기 작업실", teacher: "박서연", category: "공예", students: 62, status: "모집 중", date: "10월 16일 오후 6:00", color: "yellow" },
-  { id: "coffee", title: "집에서도 카페처럼 핸드드립", teacher: "최윤", category: "라이프", students: 98, status: "마감 임박", date: "10월 18일 오후 2:00", color: "blue" },
-  { id: "watercolor", title: "수채화로 기록하는 나의 계절", teacher: "김하나", category: "드로잉", students: 0, status: "임시 저장", date: "일정 미정", color: "mint" },
-  { id: "film", title: "필름 사진의 색감을 디지털로", teacher: "이도현", category: "사진", students: 41, status: "진행 중", date: "10월 20일 오후 7:00", color: "peach" },
-];
-
-const creators = [
-  { name: "김하나", role: "일러스트레이터", category: "드로잉", classes: 3, students: 1240, status: "활동 중" },
-  { name: "이도현", role: "포토그래퍼", category: "사진", classes: 2, students: 836, status: "활동 중" },
-  { name: "박서연", role: "도예가", category: "공예", classes: 2, students: 514, status: "활동 중" },
-  { name: "최윤", role: "바리스타", category: "라이프", classes: 1, students: 698, status: "활동 중" },
-];
-
 function getStatusClass(status: ClassStatus) {
   if (status === "진행 중") return "status-pill--live";
   if (status === "마감 임박") return "status-pill--urgent";
@@ -79,7 +59,12 @@ function getStatusClass(status: ClassStatus) {
 export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<SectionId>("dashboard");
   const [activeTab, setActiveTab] = useState<ClassTab>("전체 클래스");
-  const [classes, setClasses] = useState(initialClasses);
+  const [classes, setClasses] = useState<ClassItem[]>([]);
+  const [creators, setCreators] = useState<WorkspaceCreator[]>([]);
+  const [faqs, setFaqs] = useState<WorkspaceFaq[]>([]);
+  const [metrics, setMetrics] = useState<WorkspaceMetrics | null>(null);
+  const [workspaceDataReady, setWorkspaceDataReady] = useState(false);
+  const [workspaceDataError, setWorkspaceDataError] = useState("");
   const [toast, setToast] = useState("");
   const [query, setQuery] = useState("");
   const [sortOrder, setSortOrder] = useState<"latest" | "students">("latest");
@@ -92,12 +77,44 @@ export default function AdminPage() {
   const [editingClass, setEditingClass] = useState<ClassItem | null>(null);
   const [liveOn, setLiveOn] = useState(true);
   const [savedSettings, setSavedSettings] = useState(false);
-  const [notifications, setNotifications] = useState(true);
+  const [notifications, setNotifications] = useState(false);
   const [weeklyReport, setWeeklyReport] = useState(false);
-  const [workspaceName, setWorkspaceName] = useState("Classmate Studio");
-  const [adminEmail, setAdminEmail] = useState("jimin@classmate.kr");
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
   const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
   const { user, ready, logout } = useDemoSession();
+
+  useEffect(() => {
+    let cancelled = false;
+    void getWorkspaceData()
+      .then((data) => {
+        if (cancelled) return;
+        setClasses(data.classes);
+        setCreators(data.creators);
+        setFaqs(data.faqs);
+        setMetrics(data.metrics);
+        if (data.settings && !localStorage.getItem("classmate-workspace-settings")) {
+          setWorkspaceName(data.settings.workspaceName);
+          setAdminEmail(data.settings.adminEmail);
+          setNotifications(data.settings.notifications);
+          setWeeklyReport(data.settings.weeklyReport);
+        }
+      })
+      .catch((error) => {
+        console.error("Could not load workspace data", error);
+        if (!cancelled) {
+          setWorkspaceDataError(
+            "운영 데이터를 불러오지 못했습니다. Supabase 마이그레이션과 연결 설정을 확인해 주세요.",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setWorkspaceDataReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem("classmate-workspace-settings");
@@ -147,7 +164,21 @@ export default function AdminPage() {
       : filtered;
   }, [activeTab, classes, query, sortOrder]);
 
-  const calendarDate = new Date(2026, 9 + calendarMonthOffset, 1);
+  const upcomingClasses = useMemo(
+    () =>
+      classes
+        .filter((item) => item.scheduledOn && item.status !== "임시 저장")
+        .sort((first, second) => first.scheduledOn!.localeCompare(second.scheduledOn!))
+        .slice(0, 2),
+    [classes],
+  );
+  const liveClass = classes.find((item) => item.status === "진행 중");
+
+  const calendarDate = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth() + calendarMonthOffset,
+    1,
+  );
   const calendarYear = calendarDate.getFullYear();
   const calendarMonth = calendarDate.getMonth();
   const calendarDaysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
@@ -172,6 +203,7 @@ export default function AdminPage() {
       students: editingClass?.students ?? 0,
       status: String(formData.get("status")) as ClassStatus,
       date: String(formData.get("date")).trim() || "일정 미정",
+      scheduledOn: editingClass?.scheduledOn,
       color: editingClass?.color ?? "mint",
     };
     setClasses((current) =>
@@ -235,9 +267,9 @@ export default function AdminPage() {
   const renderDashboard = () => (
     <>
       <div className="stats-grid">
-        <article className="stat-card"><div className="stat-head">이번 달 매출 <span className="stat-icon stat-icon--green">₩</span></div><strong>₩ 8,420,000</strong><div className="stat-change"><span><ArrowUpRight size={13} /> 12.8%</span> 지난달보다</div><div className="mini-chart mini-chart--green">{Array.from({ length: 12 }, (_, i) => <i key={i} />)}</div></article>
-        <article className="stat-card"><div className="stat-head">총 수강생 <span className="stat-icon stat-icon--orange"><Users size={15} /></span></div><strong>2,847<span className="stat-unit">명</span></strong><div className="stat-change"><span><ArrowUpRight size={13} /> 8.2%</span> 지난달보다</div><div className="mini-chart mini-chart--orange">{Array.from({ length: 12 }, (_, i) => <i key={i} />)}</div></article>
-        <article className="stat-card"><div className="stat-head">운영 클래스 <span className="stat-icon stat-icon--blue"><BookOpen size={15} /></span></div><strong>{classes.length}<span className="stat-unit">개</span></strong><div className="stat-change"><span><ArrowUpRight size={13} /> 3개</span> 이번 달 새로 오픈</div><div className="mini-chart mini-chart--blue">{Array.from({ length: 12 }, (_, i) => <i key={i} />)}</div></article>
+        <article className="stat-card"><div className="stat-head">이번 달 매출 <span className="stat-icon stat-icon--green">₩</span></div><strong>₩ {metrics?.monthlyRevenue.toLocaleString("ko-KR") ?? "—"}</strong><div className="stat-change"><span><ArrowUpRight size={13} /> {metrics?.monthlyRevenueGrowth ?? "—"}%</span> 지난달보다</div><div className="mini-chart mini-chart--green">{metrics?.revenueTrend.map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}</div></article>
+        <article className="stat-card"><div className="stat-head">총 수강생 <span className="stat-icon stat-icon--orange"><Users size={15} /></span></div><strong>{metrics?.totalStudents.toLocaleString("ko-KR") ?? "—"}<span className="stat-unit">명</span></strong><div className="stat-change"><span><ArrowUpRight size={13} /> {metrics?.studentGrowth ?? "—"}%</span> 지난달보다</div><div className="mini-chart mini-chart--orange">{metrics?.studentTrend.map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}</div></article>
+        <article className="stat-card"><div className="stat-head">운영 클래스 <span className="stat-icon stat-icon--blue"><BookOpen size={15} /></span></div><strong>{classes.length}<span className="stat-unit">개</span></strong><div className="stat-change"><span><ArrowUpRight size={13} /> {metrics?.newClassesThisMonth ?? "—"}개</span> 이번 달 새로 오픈</div><div className="mini-chart mini-chart--blue">{metrics?.classTrend.map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}</div></article>
       </div>
       <section className="admin-panel">
         <div className="panel-heading"><div><h2>클래스 한눈에 보기</h2><p>우리 워크스페이스의 클래스를 관리해요.</p></div><button className="panel-filter" onClick={() => setSortOrder((order) => order === "latest" ? "students" : "latest")}>{sortOrder === "latest" ? "수강생 많은순" : "최근 업데이트순"} <ChevronDown size={14} /></button></div>
@@ -247,10 +279,13 @@ export default function AdminPage() {
       </section>
       <div className="admin-bottom-grid">
         <article className="upcoming-panel"><div className="panel-heading"><div><h2>다가오는 일정</h2><p>놓치지 않도록 미리 확인해요.</p></div><button className="text-action" onClick={() => selectSection("calendar")}>전체 보기 <ArrowDownRight size={14} /></button></div>
-          <div className="upcoming-row"><div className="date-block"><b>11</b><span>오늘</span></div><div><b>아이패드 드로잉 라이브</b><small>김하나 크리에이터 · 오후 8:00</small></div><span className="calendar-tag calendar-tag--live">LIVE</span></div>
-          <div className="upcoming-row"><div className="date-block"><b>14</b><span>10월</span></div><div><b>스마트폰 사진 클래스 오픈</b><small>이도현 크리에이터 · 오후 7:30</small></div><span className="calendar-tag">오픈 예정</span></div>
+          {upcomingClasses.map((item) => {
+            const date = new Date(`${item.scheduledOn ?? ""}T00:00:00`);
+            return <div className="upcoming-row" key={item.id}><div className="date-block"><b>{date.getDate()}</b><span>{date.toLocaleDateString("ko-KR", { month: "numeric" })}</span></div><div><b>{item.title}</b><small>{item.teacher} 크리에이터 · {item.date}</small></div><span className={`calendar-tag${item.status === "진행 중" ? " calendar-tag--live" : ""}`}>{item.status === "진행 중" ? "LIVE" : item.status}</span></div>;
+          })}
+          {upcomingClasses.length === 0 && <p className="empty-panel">등록된 일정이 없습니다.</p>}
         </article>
-        <article className="live-admin-card"><div className="live-card-top"><span><i /> {liveOn ? "LIVE IN PROGRESS" : "STUDIO OFFLINE"}</span><button aria-label="라이브 스튜디오 열기" onClick={() => selectSection("live")}><MoreHorizontal size={18} /></button></div><div className="live-card-title"><Video size={19} /><span><b>드로잉 클럽</b><small>김하나 크리에이터 진행 중</small></span></div><div className="live-card-stat"><strong>{liveOn ? "24" : "0"}</strong><span>명이 함께 배우고 있어요</span><div>{Array.from({ length: 5 }, (_, i) => <i key={i} />)}</div></div><Button variant="secondary" onClick={() => selectSection("live")}>라이브 모니터링 <ArrowUpRight size={14} /></Button></article>
+        <article className="live-admin-card"><div className="live-card-top"><span><i /> {liveOn && liveClass ? "LIVE IN PROGRESS" : "STUDIO OFFLINE"}</span><button aria-label="라이브 스튜디오 열기" onClick={() => selectSection("live")}><MoreHorizontal size={18} /></button></div><div className="live-card-title"><Video size={19} /><span><b>{liveClass?.title ?? "진행 중인 클래스 없음"}</b><small>{liveClass ? `${liveClass.teacher} 크리에이터 진행 중` : "예정된 수업을 확인하세요."}</small></span></div><div className="live-card-stat"><strong>{liveOn && liveClass ? metrics?.liveParticipants ?? 0 : 0}</strong><span>명이 함께 배우고 있어요</span></div><Button variant="secondary" onClick={() => selectSection("live")}>라이브 모니터링 <ArrowUpRight size={14} /></Button></article>
       </div>
     </>
   );
@@ -279,18 +314,75 @@ export default function AdminPage() {
     );
   };
 
-  const renderCalendar = () => (
-    <>
-      <div className="section-intro"><div><h2>일정 관리</h2><p>클래스 오픈과 라이브 일정을 한 곳에서 확인하세요.</p></div><Button onClick={() => { selectSection("classes"); openClassModal(); }}>일정 등록 <Plus size={15} /></Button></div>
-      <section className="calendar-panel"><div className="calendar-toolbar"><button aria-label="이전 달" onClick={() => setCalendarMonthOffset((offset) => offset - 1)}>←</button><h3>{calendarYear}년 {calendarMonth + 1}월</h3><button aria-label="다음 달" onClick={() => setCalendarMonthOffset((offset) => offset + 1)}>→</button><button className="today-button" onClick={() => setCalendarMonthOffset(0)}>기준 월로</button></div><div className="calendar-grid">{["일", "월", "화", "수", "목", "금", "토"].map((day) => <b className="calendar-day-label" key={day}>{day}</b>)}{Array.from({ length: 42 }, (_, index) => { const day = index - calendarFirstDay + 1; const valid = day > 0 && day <= calendarDaysInMonth; const events: Record<number, string> = calendarMonthOffset === 0 ? { 11: "드로잉 라이브", 14: "사진 클래스 오픈", 16: "도자기 클래스", 18: "핸드드립 클래스", 20: "필름 사진 수업" } : {}; return <button key={index} className={`calendar-cell${calendarMonthOffset === 0 && day === 11 ? " calendar-cell--today" : ""}${valid ? "" : " calendar-cell--muted"}`} disabled={!valid} onClick={() => valid && notify(events[day] ? `${day}일 일정: ${events[day]}` : `${day}일에는 등록된 일정이 없어요.`)}><span>{valid ? day : day <= 0 ? new Date(calendarYear, calendarMonth, 0).getDate() + day : day - calendarDaysInMonth}</span>{valid && events[day] && <small>{events[day]}</small>}</button>; })}</div></section>
-      <section className="admin-panel"><div className="panel-heading"><div><h2>예정된 일정</h2><p>클래스 일정과 라이브 시작 시간을 확인하세요.</p></div></div><div className="schedule-list">{classes.filter((item) => item.status !== "임시 저장").map((item) => <div className="upcoming-row" key={item.id}><div className="date-block"><b>{item.date.match(/\d+/)?.[0] ?? "—"}</b><span>10월</span></div><div><b>{item.title}</b><small>{item.teacher} 크리에이터 · {item.date}</small></div><span className={`status-pill ${getStatusClass(item.status)}`}><i />{item.status}</span></div>)}</div></section>
-    </>
-  );
+  const renderCalendar = () => {
+    const events = classes.reduce<Record<number, string>>((current, item) => {
+      if (!item.scheduledOn || item.status === "임시 저장") return current;
+      const date = new Date(`${item.scheduledOn}T00:00:00`);
+      if (
+        date.getFullYear() === calendarYear &&
+        date.getMonth() === calendarMonth
+      ) {
+        current[date.getDate()] = item.title;
+      }
+      return current;
+    }, {});
+    const scheduledClasses = classes
+      .filter((item) => item.scheduledOn && item.status !== "임시 저장")
+      .sort((first, second) => first.scheduledOn!.localeCompare(second.scheduledOn!));
+    const today = new Date();
+
+    return (
+      <>
+        <div className="section-intro"><div><h2>일정 관리</h2><p>클래스 오픈과 라이브 일정을 한 곳에서 확인하세요.</p></div><Button onClick={() => { selectSection("classes"); openClassModal(); }}>일정 등록 <Plus size={15} /></Button></div>
+        <section className="calendar-panel">
+          <div className="calendar-toolbar">
+            <button aria-label="이전 달" onClick={() => setCalendarMonthOffset((offset) => offset - 1)}>←</button>
+            <h3>{calendarYear}년 {calendarMonth + 1}월</h3>
+            <button aria-label="다음 달" onClick={() => setCalendarMonthOffset((offset) => offset + 1)}>→</button>
+            <button className="today-button" onClick={() => setCalendarMonthOffset(0)}>이번 달</button>
+          </div>
+          <div className="calendar-grid">
+            {["일", "월", "화", "수", "목", "금", "토"].map((day) => <b className="calendar-day-label" key={day}>{day}</b>)}
+            {Array.from({ length: 42 }, (_, index) => {
+              const day = index - calendarFirstDay + 1;
+              const valid = day > 0 && day <= calendarDaysInMonth;
+              const isToday =
+                valid &&
+                today.getFullYear() === calendarYear &&
+                today.getMonth() === calendarMonth &&
+                today.getDate() === day;
+              return (
+                <button
+                  key={index}
+                  className={`calendar-cell${isToday ? " calendar-cell--today" : ""}${valid ? "" : " calendar-cell--muted"}`}
+                  disabled={!valid}
+                  onClick={() => valid && notify(events[day] ? `${day}일 일정: ${events[day]}` : `${day}일에는 등록된 일정이 없어요.`)}
+                >
+                  <span>{valid ? day : day <= 0 ? new Date(calendarYear, calendarMonth, 0).getDate() + day : day - calendarDaysInMonth}</span>
+                  {valid && events[day] && <small>{events[day]}</small>}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+        <section className="admin-panel">
+          <div className="panel-heading"><div><h2>예정된 일정</h2><p>클래스 오픈과 라이브 시작 시간을 확인하세요.</p></div></div>
+          <div className="schedule-list">
+            {scheduledClasses.map((item) => {
+              const date = new Date(`${item.scheduledOn ?? ""}T00:00:00`);
+              return <div className="upcoming-row" key={item.id}><div className="date-block"><b>{date.getDate()}</b><span>{date.toLocaleDateString("ko-KR", { month: "numeric" })}</span></div><div><b>{item.title}</b><small>{item.teacher} 크리에이터 · {item.date}</small></div><span className={`status-pill ${getStatusClass(item.status)}`}><i />{item.status}</span></div>;
+            })}
+            {scheduledClasses.length === 0 && <p className="empty-panel">등록된 일정이 없습니다.</p>}
+          </div>
+        </section>
+      </>
+    );
+  };
 
   const renderLive = () => (
     <>
       <div className="section-intro"><div><h2>라이브 스튜디오</h2><p>진행 중인 세션 상태와 참여 현황을 관리하세요.</p></div><span className={`studio-state${liveOn ? " studio-state--on" : ""}`}><i />{liveOn ? "스튜디오 연결됨" : "스튜디오 대기 중"}</span></div>
-      <div className="live-layout"><article className="studio-preview"><div className="studio-preview-top"><span><i />{liveOn ? "LIVE" : "OFFLINE"}</span><span>드로잉 클럽 · 세션 01</span></div><div className="studio-stage"><Video size={42} /><b>{liveOn ? "라이브 세션이 진행 중입니다" : "현재 진행 중인 라이브가 없습니다"}</b><span>{liveOn ? "강사와 학습자 연결 상태가 정상이에요." : "새 세션을 시작하거나 예정된 클래스를 확인하세요."}</span></div><div className="studio-controls"><Button onClick={() => { setLiveOn((value) => !value); notify(liveOn ? "라이브 세션을 종료했어요." : "라이브 세션을 시작했어요."); }}>{liveOn ? "세션 종료" : "세션 시작"}</Button><Button variant="secondary" onClick={() => window.open("http://localhost:3000/#live", "_blank", "noopener,noreferrer")}>학습자 화면 보기 <ArrowUpRight size={14} /></Button></div></article><aside className="studio-stats"><article><span>현재 참여자</span><b>{liveOn ? 24 : 0}명</b><small>최대 수용 인원 100명</small></article><article><span>연결 품질</span><b className="quality-good">{liveOn ? "양호" : "대기"}</b><small>Socket.IO 시그널링 서버</small></article><article><span>채팅 메시지</span><b>{liveOn ? 86 : 0}개</b><small>이번 세션 누적</small></article></aside></div>
+      <div className="live-layout"><article className="studio-preview"><div className="studio-preview-top"><span><i />{liveOn ? "LIVE" : "OFFLINE"}</span><span>{liveClass?.title ?? "진행 중인 클래스 없음"}</span></div><div className="studio-stage"><Video size={42} /><b>{liveOn && liveClass ? "라이브 세션이 진행 중입니다" : "현재 진행 중인 라이브가 없습니다"}</b><span>{liveOn && liveClass ? `${liveClass.teacher} 크리에이터 진행 중` : "예정된 클래스를 확인하세요."}</span></div><div className="studio-controls"><Button onClick={() => { setLiveOn((value) => !value); notify(liveOn ? "라이브 세션을 종료했어요." : "라이브 세션을 시작했어요."); }}>{liveOn ? "세션 종료" : "세션 시작"}</Button><Button variant="secondary" onClick={() => window.open("http://localhost:3000/#live", "_blank", "noopener,noreferrer")}>학습자 화면 보기 <ArrowUpRight size={14} /></Button></div></article><aside className="studio-stats"><article><span>현재 참여자</span><b>{liveOn ? metrics?.liveParticipants ?? 0 : 0}명</b><small>최대 수용 인원 {metrics?.liveCapacity ?? "—"}명</small></article><article><span>연결 품질</span><b className="quality-good">{liveOn ? metrics?.connectionQuality ?? "대기" : "대기"}</b><small>Socket.IO 시그널링 서버</small></article><article><span>채팅 메시지</span><b>{liveOn ? metrics?.liveChatMessages ?? 0 : 0}개</b><small>이번 세션 누적</small></article></aside></div>
     </>
   );
 
@@ -302,6 +394,7 @@ export default function AdminPage() {
     </>
   );
 
+<<<<<<< HEAD
   const renderHelp = () => (
     <>
       <div className="section-intro"><div><h2>도움말</h2><p>클래스 운영에 필요한 기본 안내를 확인하세요.</p></div><a className="help-contact" href="mailto:support@classmate.kr">문의하기 <ArrowUpRight size={14} /></a></div>
@@ -314,6 +407,24 @@ export default function AdminPage() {
       ].filter(([question]) => question.toLowerCase().includes(query.toLowerCase())).map(([question, answer]) => <details key={question}><summary>{question}<ChevronDown size={16} /></summary><p>{answer}</p></details>)}</div>
     </>
   );
+=======
+  const renderHelp = () => {
+    const filteredFaqs = faqs.filter((faq) =>
+      faq.question.toLowerCase().includes(query.toLowerCase()),
+    );
+
+    return (
+      <>
+        <div className="section-intro"><div><h2>도움말</h2><p>클래스 운영에 필요한 기본 안내를 확인하세요.</p></div><a className="help-contact" href="mailto:support@classmate.kr">문의하기 <ArrowUpRight size={14} /></a></div>
+        <section className="help-hero"><CircleHelp size={24} /><div><h3>무엇을 도와드릴까요?</h3><p>아래 질문을 선택하면 안내를 확인할 수 있어요.</p></div><label><Search size={15} /><input aria-label="도움말 검색" placeholder="도움말 검색" value={query} onChange={(event) => setQuery(event.target.value)} /></label></section>
+        <div className="faq-list">
+          {filteredFaqs.map((faq) => <details key={faq.id}><summary>{faq.question}<ChevronDown size={16} /></summary><p>{faq.answer}</p></details>)}
+          {filteredFaqs.length === 0 && <div className="empty-panel">검색 결과가 없습니다.</div>}
+        </div>
+      </>
+    );
+  };
+>>>>>>> feature/강의데이터-연동-및-상단이동
 
   const content = {
     dashboard: renderDashboard,
@@ -379,9 +490,11 @@ export default function AdminPage() {
         </div>
       </aside>
       <section className="admin-main">
-        <header className="admin-topbar"><div className="breadcrumb">워크스페이스 <span>/</span> <b>{activeSectionLabel}</b></div><div className="admin-top-actions"><LanguageSwitcher /><label className="admin-search"><Search size={15} /><input className="admin-search-input" aria-label="워크스페이스 검색" placeholder="무엇이든 검색하세요" value={query} onChange={(event) => setQuery(event.target.value)} /><kbd><Command size={10} /> K</kbd></label><button className="admin-icon" aria-label="알림" onClick={() => notify(liveOn ? "드로잉 클럽 라이브가 진행 중이에요." : "새로운 알림이 없어요.")}><Bell size={17} /><i /></button><button className="profile-picture profile-picture--small profile-trigger" aria-label="프로필 메뉴" onClick={() => setProfileMenuOpen((open) => !open)}>{user?.name.slice(0, 1) ?? "?"}</button></div></header>
+        <header className="admin-topbar"><div className="breadcrumb">워크스페이스 <span>/</span> <b>{activeSectionLabel}</b></div><div className="admin-top-actions"><LanguageSwitcher /><label className="admin-search"><Search size={15} /><input className="admin-search-input" aria-label="워크스페이스 검색" placeholder="무엇이든 검색하세요" value={query} onChange={(event) => setQuery(event.target.value)} /><kbd><Command size={10} /> K</kbd></label><button className="admin-icon" aria-label="알림" onClick={() => notify(liveOn && liveClass ? `${liveClass.title} 라이브가 진행 중이에요.` : "진행 중인 라이브가 없어요.")}><Bell size={17} /><i /></button><button className="profile-picture profile-picture--small profile-trigger" aria-label="프로필 메뉴" onClick={() => setProfileMenuOpen((open) => !open)}>{user?.name.slice(0, 1) ?? "?"}</button></div></header>
         <div className="admin-content">
-          <div className="admin-welcome"><div><div className="admin-date">SUNDAY, OCTOBER 11, 2026</div><h1>{activeSection === "dashboard" ? `좋은 오후예요, ${user?.name ?? "게스트"}님` : activeSectionLabel}<span> ✳</span></h1><p>{activeSection === "dashboard" ? "오늘도 새로운 배움이 피어나고 있어요." : "워크스페이스 운영에 필요한 정보를 확인하세요."}</p></div>{activeSection !== "settings" && activeSection !== "help" && <Button onClick={() => openClassModal()}><Plus size={16} /> 새 클래스 만들기</Button>}</div>
+          <div className="admin-welcome"><div><div className="admin-date">{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).toUpperCase()}</div><h1>{activeSection === "dashboard" ? `좋은 오후예요, ${user?.name ?? "게스트"}님` : activeSectionLabel}<span> ✳</span></h1><p>{activeSection === "dashboard" ? "오늘도 새로운 배움이 피어나고 있어요." : "워크스페이스 운영에 필요한 정보를 확인하세요."}</p></div>{activeSection !== "settings" && activeSection !== "help" && <Button onClick={() => openClassModal()}><Plus size={16} /> 새 클래스 만들기</Button>}</div>
+          {!workspaceDataReady && <p className="empty-panel" role="status">Supabase 워크스페이스 데이터를 불러오는 중입니다.</p>}
+          {workspaceDataError && <p className="empty-panel" role="alert">{workspaceDataError} `20261103090000_add_workspace_demo_content.sql`을 적용해 주세요.</p>}
           {content}
           <footer className="admin-footer">Classmate Studio <span>·</span> 좋은 배움을 만드는 사람들 <span>·</span> 데모 데이터</footer>
         </div>

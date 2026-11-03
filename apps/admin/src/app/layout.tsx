@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "@mantine/core/styles.css";
 import { DesignSystemProvider } from "@classmate/ui/design-system";
 import { LocalizationProvider } from "@classmate/ui/localization";
+import { ScrollToTopButton } from "@classmate/ui/scroll-to-top-button";
 import { DemoSessionProvider } from "@classmate/ui/use-demo-session";
 import "./globals.css";
 
@@ -18,7 +19,10 @@ export default function RootLayout({
       <body>
         <DesignSystemProvider>
           <DemoSessionProvider>
-            <LocalizationProvider>{children}</LocalizationProvider>
+            <LocalizationProvider>
+              {children}
+              <ScrollToTopButton />
+            </LocalizationProvider>
           </DemoSessionProvider>
         </DesignSystemProvider>
       </body>

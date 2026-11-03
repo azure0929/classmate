@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "@mantine/core/styles.css";
+import { ScrollToTopButton } from "@classmate/ui/scroll-to-top-button";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -15,7 +16,10 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <ScrollToTopButton />
+        </Providers>
       </body>
     </html>
   );
