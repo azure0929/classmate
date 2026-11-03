@@ -27,7 +27,7 @@ export function Providers({ children }: ProvidersProps) {
 
   return (
     <DesignSystemProvider>
-      <DemoSessionProvider defaultUser={{ name: "지민", email: "jimin@classmate.kr", role: "learner" }}>
+      <DemoSessionProvider>
         <LocalizationProvider>
           <LoginRequiredProvider>
             <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>

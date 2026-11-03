@@ -13,6 +13,7 @@
     "clean": "turbo clean && node -e \"require('node:fs').rmSync('node_modules', { recursive: true, force: true })\""
   },
   "devDependencies": {
+    "@types/node": "^26.6.6",
     "prettier": "^3.5.3",
     "turbo": "^2.5.0",
     "typescript": "^5.8.3"

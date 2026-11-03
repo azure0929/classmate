@@ -97,7 +97,7 @@ export default function AdminPage() {
   const [workspaceName, setWorkspaceName] = useState("Classmate Studio");
   const [adminEmail, setAdminEmail] = useState("jimin@classmate.kr");
   const [calendarMonthOffset, setCalendarMonthOffset] = useState(0);
-  const { user, ready, login, logout } = useDemoSession();
+  const { user, ready, logout } = useDemoSession();
 
   useEffect(() => {
     const stored = localStorage.getItem("classmate-workspace-settings");
@@ -157,7 +157,6 @@ export default function AdminPage() {
     sections.find((section) => section.id === activeSection)?.label ?? "대시보드";
 
   const handleAuth = (nextUser: AuthUser) => {
-    login(nextUser);
     setShowAuth(false);
     notify(`환영합니다, ${nextUser.name}님.`);
   };
@@ -311,7 +310,7 @@ export default function AdminPage() {
         ["클래스는 어떻게 만들 수 있나요?", "클래스 관리 탭의 ‘새 클래스’ 버튼을 눌러 제목, 크리에이터, 카테고리와 모집 상태를 입력하면 됩니다."],
         ["라이브 수업은 어떻게 시작하나요?", "라이브 스튜디오 탭에서 세션을 시작한 뒤 학습자 플랫폼의 라이브 강의실을 열어 연결 상태를 확인하세요."],
         ["수강생과 클래스 정보를 수정할 수 있나요?", "클래스 목록의 옵션 메뉴에서 클래스 정보를 수정하거나 삭제할 수 있습니다. 데모 데이터는 브라우저 세션에만 반영됩니다."],
-        ["로그인 정보는 안전하게 저장되나요?", "현재 화면은 백엔드가 연결되지 않은 데모입니다. 비밀번호는 저장하지 않으며, 실제 서비스 인증으로 사용할 수 없습니다."],
+         ["로그인 정보는 안전하게 저장되나요?", "비밀번호는 Supabase Auth에서 검증하고 profiles 테이블에는 저장하지 않습니다. 사용자 역할은 Auth 계정에 연결된 프로필에서 읽습니다."],
       ].filter(([question]) => question.toLowerCase().includes(query.toLowerCase())).map(([question, answer]) => <details key={question}><summary>{question}<ChevronDown size={16} /></summary><p>{answer}</p></details>)}</div>
     </>
   );

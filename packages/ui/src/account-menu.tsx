@@ -15,7 +15,7 @@ export function AccountMenu({
   onAuthenticated,
   onLoggedOut,
 }: AccountMenuProps) {
-  const { user, ready, login, logout } = useDemoSession();
+  const { user, ready, logout } = useDemoSession();
   const { t } = useTranslation();
   const [profileOpen, setProfileOpen] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
@@ -29,7 +29,6 @@ export function AccountMenu({
   };
 
   const handleAuth = (nextUser: AuthUser) => {
-    login(nextUser);
     setShowAuth(false);
     onAuthenticated?.(nextUser);
   };

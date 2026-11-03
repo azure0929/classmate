@@ -21,6 +21,7 @@
   "dependencies": {
     "@mantine/core": "^8.3.18",
     "@mantine/hooks": "^8.3.18",
+    "@supabase/supabase-js": "^2.117.3",
     "i18next": "^26.4.3",
     "i18next-locize-backend": "^10.0.3",
     "react-i18next": "^17.0.16"
@@ -31,6 +32,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.0.12",
+    "@types/node": "^22.13.10",
     "typescript": "^5.8.3"
   }
 }

@@ -22,7 +22,7 @@ interface LoginRequiredProviderProps {
 }
 
 export function LoginRequiredProvider({ children }: LoginRequiredProviderProps) {
-  const { login, user } = useDemoSession();
+  const { user } = useDemoSession();
   const { t } = useTranslation();
   const [noticeOpen, setNoticeOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
@@ -43,7 +43,6 @@ export function LoginRequiredProvider({ children }: LoginRequiredProviderProps) 
   const contextValue = useMemo(() => requestLogin, [requestLogin]);
 
   const completeLogin = (nextUser: AuthUser) => {
-    login(nextUser);
     setAuthOpen(false);
     setNoticeOpen(false);
     afterLogin?.();

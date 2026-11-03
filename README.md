@@ -26,7 +26,7 @@ apps/
   web/               학습자 웹 앱 (Next.js App Router)
 packages/
   realtime-types/    실시간 클라이언트/서버 공유 이벤트 타입
-  ui/                Mantine 디자인 시스템, 다국어, 공통 UI와 데모 인증 세션
+  ui/                Mantine 디자인 시스템, 다국어, 공통 UI와 Supabase Auth 세션
 ```
 
 ### 학습자 앱 아키텍처 (`apps/web/src`)
@@ -49,11 +49,20 @@ features/
 
 `features/courses/data/curated-videos.ts`의 공개 YouTube 영상 39개가 `/classes`의 강의 목록입니다. 카드는 등록된 영상 제목과 크리에이터, YouTube 썸네일을 보여주며, 영상별 상세 페이지에서 원본 플레이어와 설명·학습 목차를 확인할 수 있습니다. 목차는 등록된 제목·설명·키워드 기반의 학습 가이드이며 실제 자막 검수나 영상 타임스탬프를 보증하지 않습니다. YouTube가 제공하지 않는 평점·수강생 통계 기반 정렬은 비활성화했습니다. `/courses/{courseId}/watch`는 해당 강의에 연결된 원본 영상을 재생하며, 비로그인 사용자도 볼 수 있고 실시간 채팅·공개 Q&A는 로그인 후 이용할 수 있습니다. 영상은 원본 크리에이터가 제공하며 Classmate의 자체 VOD나 크리에이터의 공식 강좌를 의미하지 않습니다.
 
-강의 카탈로그는 Supabase `public.courses` 테이블에서 읽습니다. 첫 이전 마이그레이션은 [courses 스키마 및 초기 39개 영상 데이터](./supabase/migrations/20261011180000_create_seed_public_courses.sql)에 있으며, Supabase Dashboard의 SQL Editor에서 파일 전체를 실행한 뒤 `apps/web/.env.local`에 프로젝트 URL과 publishable key를 설정해야 합니다. 로컬 환경 변수 예시는 [.env.example](./.env.example)에 있습니다. 테이블은 RLS를 켜고 공개 읽기만 허용하며 쓰기 권한은 `anon`/`authenticated`에 주지 않습니다. 앱은 데이터베이스 오류를 목업 데이터로 대체하지 않고 오류로 표시합니다.
+강의 카탈로그는 Supabase `public.courses` 테이블에서 읽습니다. Supabase Dashboard의 SQL Editor에서 [courses 마이그레이션](./supabase/migrations/20261011180000_create_seed_public_courses.sql)과 [Auth·profiles 보안 마이그레이션](./supabase/migrations/20261103123000_secure_profiles_with_supabase_auth.sql)을 순서대로 적용한 뒤 `apps/web/.env.local`과 `apps/admin/.env.local`에 프로젝트 URL과 publishable key를 설정하세요. 기존 `profiles` 행은 확인된 Supabase Auth 사용자와 이메일 기준으로 한 번 연결됩니다. 환경 변수 예시는 [.env.example](./.env.example)에 있습니다. 강의 테이블은 공개 읽기 전용이고, 프로필은 로그인한 사용자가 자신의 행만 읽을 수 있습니다. DB 오류는 임의 데이터로 대체하지 않습니다.
 
 공통 UI는 Mantine 8 기반 테마를 사용합니다. `packages/ui/src/localization.tsx`에 한국어·영어·일본어·베트남어 기본 리소스가 있고, 언어 선택값은 브라우저에 저장됩니다. 원격 locize 번역을 사용하려면 `.env.local`에 `NEXT_PUBLIC_LOCIZE_PROJECT_ID`를 설정하고 선택적으로 `NEXT_PUBLIC_LOCIZE_VERSION`을 지정하세요. 두 값이 없으면 로컬 번역만 사용합니다.
 
-홈의 알림 목록은 읽음 상태를 브라우저 로컬 저장소에 기록하고, 모두 읽은 뒤에는 종 아이콘이 회색으로 표시됩니다. 데모 로그인에서 학습자·강사·관리자 화면 권한을 구분하며, 비로그인 강의 재생과 상호작용은 로그인 창으로 유도합니다. 이 데모 인증은 브라우저 상태일 뿐 실제 계정 인증/인가가 아니므로 배포 전 서버 세션과 API 권한 검증으로 교체해야 합니다.
+홈의 알림 읽음 상태는 브라우저 로컬 저장소에 기록됩니다. 로그인·회원가입은 Supabase Auth 이메일/비밀번호 인증을 사용하고, 화면의 이름·역할은 인증된 사용자 UID와 연결된 `public.profiles`에서 읽습니다. 비밀번호를 `profiles`에 저장하지 않으며 클라이언트에서 역할을 선택할 수 없습니다. 기존 프로필에 대응하는 Auth 계정이 없다면 Auth Dashboard에서 계정을 만들고 이메일을 확인한 후 아래 관리자 SQL을 실행해 연결해야 합니다. 신규 가입 역할은 DB trigger에서 `student`로 지정되며, 관리자 역할은 신뢰된 DB 작업으로만 부여합니다.
+
+```sql
+update public.profiles as profile
+set auth_user_id = auth_user.id
+from auth.users as auth_user
+where lower(profile.email) = lower(auth_user.email)
+  and auth_user.email_confirmed_at is not null
+  and profile.auth_user_id is null;
+```
 
 ## 인터랙션과 운영 범위
 
@@ -63,9 +72,9 @@ features/
 - 로그인 후 Socket.IO 실시간 채팅, 본인 메시지 수정·삭제, 접속자 수 동기화
 - 로그인 후 강의별 공개 Q&A 실시간 공유, 본인 질문 수정·삭제
 - 라이브 클래스 입장, 카메라·마이크 권한, 화면 공유, 브라우저 간 WebRTC 미디어 연결
-- 강사/관리자 데모 역할 전용 클래스·크리에이터·일정·라이브 스튜디오 관리 화면
+- profiles 역할에 따라 표시되는 강사·관리자 클래스·크리에이터·일정·라이브 스튜디오 화면
 
-`apps/realtime`의 채팅과 공개 Q&A 기록은 프로세스 메모리에 최근 100개까지 보관하며 서버 재시작 시 초기화됩니다. Q&A와 채팅의 작성자 소유권은 데모에서 Socket.IO 연결 ID로 확인하며, 재접속 후에는 이전 글을 수정할 수 없습니다. 역할 선택은 브라우저에서 이뤄지므로 서버 측 인증·인가를 대신하지 않습니다. 전체 권한 범위와 운영 전환 시 남은 이슈는 [접근 권한 및 학습 기능 범위](./docs/access-control-and-learning-scope.md)를 참고하세요.
+`apps/realtime`의 채팅과 공개 Q&A 기록은 프로세스 메모리에 최근 100개까지 보관하며 서버 재시작 시 초기화됩니다. Q&A와 채팅의 작성자 소유권은 Socket.IO 연결 ID로 확인하며, 재접속 후에는 이전 글을 수정할 수 없습니다. 프로필 RLS는 본인 행 읽기만 허용합니다. 전체 권한 범위와 운영 전환 시 남은 이슈는 [접근 권한 및 학습 기능 범위](./docs/access-control-and-learning-scope.md)를 참고하세요.
 
 WebRTC는 브라우저 간 P2P mesh 데모이며, 시그널링 서버는 미디어를 전달하지 않습니다. 실제 다자간 강의 운영에는 SFU, TURN, 인증·인가, 영속 메시지 저장소, rate limiting과 HTTPS/WSS 구성이 필요합니다. 카메라와 마이크는 localhost 또는 HTTPS 환경에서 사용할 수 있습니다.
 
